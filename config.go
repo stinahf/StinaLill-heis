@@ -24,10 +24,21 @@ type ElevatorInfo struct {
 	//Queue something something
 }
 
-type NewOrderInfo struct {
+type OrderInfo struct {
 	Button int
 	Floor int
 }
+
+type Message struct {
+	Status int
+	Floor int
+	Button int
+}
+
+const (
+	NewOrder = 1
+	OrderComplete = 2
+)
 
 const (
 	Idle = 0

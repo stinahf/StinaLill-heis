@@ -8,6 +8,7 @@ type Channels struct {
 	NewOrder chan bool //Event
 	ReachedFloor chan int //Event
 	DoorClosing chan bool //Enten newOrder eller Idle
+	Message chan def.Message 
 
 }
 
@@ -27,7 +28,8 @@ func eventManager(ch Channels) {
 	}
 }
 
-func handleNewOrder(ch Channels) { //Til stud.ass, hvor tar vi inn info om pakker?
+func handleNewOrder(order OrderInfo) { //Til stud.ass, hvor tar vi inn info om pakker?
+	Elev_set_button_lamp(floor, button, true)
 	switch state {
 	case Idle:
 		/*  Is the order in current floor?
@@ -59,6 +61,20 @@ func handleReachedFloor(ch Channels) { //Til stud.ass - NewFloor hvordan?
 		/*if correctFloor:
 				stop
 				Open door
-				state = OpenDoor*/
-	}
+				*Set door lamp
+						Start counter
+						when counter out
+							close Door
+							turn off door lamp
+							Delete order from queue
+							*/
+	case OpenDoor:
+		/*Set door lamp
+				Start counter
+				when counter out
+					close Door
+					turn off door lamp
+					Delete order from queue
+					*/
+				}
 }
