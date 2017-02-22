@@ -1,0 +1,6 @@
+package liftAssigner
+
+import (
+	"./eventManager"
+)
+
