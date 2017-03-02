@@ -51,7 +51,7 @@ const (
 	OpenDoor = 2
 )
 
-var state int
+
 
 /*
 var infoPackage map[Id]ElevatorMsg

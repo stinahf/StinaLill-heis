@@ -1,7 +1,7 @@
 package hw
 
 import (
-	def "config"
+	"../config"
 	"errors"
 	"fmt"
 	"log"
@@ -9,14 +9,14 @@ import (
 
 //const MOTOR_SPEED 2800 //TODO - Move to config file
 
-var lamp_channel_matrix = [def.N_FLOORS][def.N_BUTTONS]int{
+var lamp_channel_matrix = [config.N_FLOORS][config.N_BUTTONS]int{
 	{LIGHT_UP1, LIGHT_DOWN1, LIGHT_COMMAND1},
 	{LIGHT_UP2, LIGHT_DOWN2, LIGHT_COMMAND2},
 	{LIGHT_UP3, LIGHT_DOWN3, LIGHT_COMMAND3},
 	{LIGHT_UP4, LIGHT_DOWN4, LIGHT_COMMAND4},
 }
 
-var button_channel_matrix = [def.N_FLOORS][def.N_BUTTONS]int{
+var button_channel_matrix = [config.N_FLOORS][config.N_BUTTONS]int{
 	{BUTTON_UP1, BUTTON_DOWN1, BUTTON_COMMAND1},
 	{BUTTON_UP2, BUTTON_DOWN2, BUTTON_COMMAND2},
 	{BUTTON_UP3, BUTTON_DOWN3, BUTTON_COMMAND3},
@@ -28,26 +28,26 @@ func Init() error {
 		return errors.New("Hw: ioInit() failed!")
 	}
 
-	for f := 0; f < def.N_FLOORS; f++ {
+	for f := 0; f < config.N_FLOORS; f++ {
 		if f != 0 {
-			SetButtonLamp(f, def.BUTTON_UP, false)
+			SetButtonLamp(config.BUTTON_DOWN, f, false)
 		}
-		if f != def.N_FLOORS-1 {
-			SetButtonLamp(f, def.BUTTON_DOWN, false)
+		if f != config.N_FLOORS-1 {
+			SetButtonLamp(config.BUTTON_UP, f, false)
 		}
-		SetButtonLamp(f, def.BUTTON_INTERNAL, false)
+		SetButtonLamp(config.BUTTON_INTERNAL, f, false)
 	}
 
 	SetStopLamp(false)
 	SetDoorOpenLamp(false)
 
 	//Move to init floor (1st floor)
-	SetMotorDirection(def.DIR_DOWN)
+	SetMotorDirection(config.DIR_DOWN)
 	floor := GetFloorSensorSignal()
 	for floor == -1 {
 		floor = GetFloorSensorSignal()
 	}
-	SetMotorDirection(def.DIR_STOP)
+	SetMotorDirection(config.DIR_STOP)
 	SetFloorIndicator(floor)
 
 	fmt.Println("Hw initialized")
@@ -68,19 +68,19 @@ func SetMotorDirection(dirn int) {
 }
 
 func SetButtonLamp(button int, floor int, value bool) {
-	if floor < 0 || floor >= def.N_FLOORS {
+	if floor < 0 || floor >= config.N_FLOORS {
 		log.Printf("Error: The floor is out of range", floor)
 		return
 	}
-	if button == def.BUTTON_UP && floor == def.N_FLOORS-1 {
+	if button == config.BUTTON_UP && floor == config.N_FLOORS-1 {
 		log.Println("You are already at the top")
 		return
 	}
-	if button == def.BUTTON_DOWN && floor == 0 {
+	if button == config.BUTTON_DOWN && floor == 0 {
 		log.Println("You are already at the bottom")
 		return
 	}
-	if button != def.BUTTON_UP && button != def.BUTTON_DOWN && button != def.BUTTON_INTERNAL {
+	if button != config.BUTTON_UP && button != config.BUTTON_DOWN && button != config.BUTTON_INTERNAL {
 		log.Printf("Invalid button %d\n", button)
 		return
 	}
@@ -93,7 +93,7 @@ func SetButtonLamp(button int, floor int, value bool) {
 }
 
 func SetFloorIndicator(floor int) {
-	if floor < 0 || floor >= def.N_FLOORS {
+	if floor < 0 || floor >= config.N_FLOORS {
 		log.Printf("The floor %d is out of range! \n", floor)
 		return
 	}
@@ -129,19 +129,19 @@ func SetStopLamp(value bool) {
 }
 
 func GetButtonSignal(button int, floor int) bool {
-	if floor < 0 || floor >= def.N_FLOORS {
+	if floor < 0 || floor >= config.N_FLOORS {
 		log.Printf("The floor %d is out of range \n", floor)
 		return false
 	}
-	if button < 0 || button >= def.N_BUTTONS {
+	if button < 0 || button >= config.N_BUTTONS {
 		log.Printf("Button %d is out of range \n", floor)
 		return false
 	}
-	if button == def.BUTTON_UP && floor == def.N_FLOORS-1 {
+	if button == config.BUTTON_UP && floor == config.N_FLOORS-1 {
 		log.Println("You are already on the top")
 		return false
 	}
-	if button == def.BUTTON_DOWN && floor == 0 {
+	if button == config.BUTTON_DOWN && floor == 0 {
 		log.Println("You are already at the buttom")
 		return false
 	}

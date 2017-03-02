@@ -1,8 +1,10 @@
 package main
 
 import (
-	def "config"
-	"hw"
+	//"../config"
+	"../hw"
+	"../queue"
+	"../eventManager"
 	//"fmt"
 	//"time"
 )
@@ -24,6 +26,8 @@ func f() {
 		}
 	}
 }*/
+
+
 
 func main() {
 	/*
@@ -55,18 +59,19 @@ func main() {
 		}*/
 
 	hw.Init() //Gir ut feil meldinger: You are already at the bottom, Invalid button 3 to ganger, tyder på at heisen tror knapper blir trykket inn når det ikke blir det
-	hw.SetMotorDirection(def.DIR_UP)
-
-	for { //Go har ikke while loops
-		if hw.GetFloorSensorSignal() == def.N_FLOORS-1 {
-			hw.SetMotorDirection(def.DIR_DOWN)
+	//hw.SetMotorDirection(config.DIR_UP)
+	queue.Init()
+	eventManager.Init()
+	/*for { //Go har ikke while loops
+		if hw.GetFloorSensorSignal() == config.N_FLOORS-1 {
+			hw.SetMotorDirection(config.DIR_DOWN)
 		} else if hw.GetFloorSensorSignal() == 0 {
-			hw.SetMotorDirection(def.DIR_UP)
+			hw.SetMotorDirection(config.DIR_UP)
 		}
 
 		if hw.GetStopSignal() {
-			hw.SetMotorDirection(def.DIR_STOP)
+			hw.SetMotorDirection(config.DIR_STOP)
 			//return 0
 		}
-	}
+	}*/
 }
