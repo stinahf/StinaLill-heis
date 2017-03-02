@@ -20,6 +20,7 @@ const (
 type ElevatorInfo struct {
 	CurrentFloor int
 	MotorDir     int
+	State        int
 	//State //If we opt to have states
 	//Queue something something
 }
@@ -50,8 +51,6 @@ const (
 	Moving   = 1
 	OpenDoor = 2
 )
-
-
 
 /*
 var infoPackage map[Id]ElevatorMsg

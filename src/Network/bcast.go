@@ -132,7 +132,7 @@ func infoSpammer() {
 
 
 	const spamInterval = 100*time.Millisecond
-	info := def.ElevatorInfo
+	info := config.ElevatorMsg{Id: /*IP HER*/, CurrentFloor: -1, MotorDir: -1, State: -1}
 	for {
 		Message <- info
 		time.Sleep(spamInterval)

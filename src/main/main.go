@@ -2,10 +2,11 @@ package main
 
 import (
 	//"../config"
+	//"../eventManager"
+	"../config"
 	"../hw"
 	"../queue"
-	"../eventManager"
-	//"fmt"
+	"fmt"
 	//"time"
 )
 
@@ -27,7 +28,18 @@ func f() {
 	}
 }*/
 
-
+/*func TestQueueModule() {
+	for {
+		for i := 0; i < config.N_FLOORS; i++ {
+			for j := 0; j < config.N_BUTTONS; j++ {
+				if hw.GetButtonSignal(i, j) {
+					queue.AddLocalOrder(i, j)
+				}
+			}
+		}
+		hw.SetMotorDirection(queue.ActuallyChooseDirection(1, config.DIR_STOP))
+	}
+}*/
 
 func main() {
 	/*
@@ -58,10 +70,16 @@ func main() {
 			}
 		}*/
 
-	hw.Init() //Gir ut feil meldinger: You are already at the bottom, Invalid button 3 to ganger, tyder på at heisen tror knapper blir trykket inn når det ikke blir det
+	hw.Init()
 	//hw.SetMotorDirection(config.DIR_UP)
 	queue.Init()
-	eventManager.Init()
+	//queue.AddLocalOrder(2, config.BUTTON_DOWN)
+	fmt.Println("Andreas er snill som hjelper oss")
+	//TestQueueModule()
+	//queue.IsQueueEmpty()
+	//queue.ActuallyChooseDirection(1, config.DIR_STOP)
+	//queue.PrintMatrix()
+	//eventManager.Init(ch)
 	/*for { //Go har ikke while loops
 		if hw.GetFloorSensorSignal() == config.N_FLOORS-1 {
 			hw.SetMotorDirection(config.DIR_DOWN)

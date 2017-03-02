@@ -2,19 +2,21 @@ package eventManager
 
 import (
 	"../config"
-	"../queue"
 	"../hw"
+	"../queue"
 	"time"
 )
 
 type Channels struct {
-	NewOrder chan bool //Event
-	ReachedFloor chan int //Event
-	DoorClosing chan bool //Enten newOrder eller Idle
-	Message chan config.Message
+	NewOrder     chan bool //Event
+	ReachedFloor chan int  //Event
+	DoorClosing  chan bool //Enten newOrder eller Idle
+	Message      chan config.Message
 }
 
 var floor int
+var newFloor int
+var button int
 var dir int
 var state int
 
@@ -25,7 +27,6 @@ func Init(ch Channels) {
 
 	go eventManager(ch)
 
-	
 }
 
 func eventManager(ch Channels) {
@@ -33,31 +34,31 @@ func eventManager(ch Channels) {
 		select {
 		case <-ch.NewOrder:
 			handleNewOrder(ch)
-		case floor := <-ch.ReachedFloor:
+		case <-ch.ReachedFloor:
 			handleReachedFloor(ch)
 		}
 	}
 }
 
 func handleNewOrder(ch Channels) {
-	floor = queue.GetFloorFromQueue()
-	button = queue.GetButtonFromQueue()
+	//floor = queue.GetFloorFromQueue()
+	//button = queue.GetButtonFromQueue()
 	hw.SetButtonLamp(floor, button, true)
 	switch state {
-	case Idle:
-		if queue.ShouldStop(config.DIR_STOP, floor){
+	case config.Idle:
+		if queue.ShouldStop(config.DIR_STOP, floor) {
 			openDoor()
 			queue.RemoveOrder(floor, ch.Message) //Fikset, sjekk at funker
-			floor = queue.GetFloorFromQueue()
+			//floor = queue.GetFloorFromQueue()
 			handleDoorClosing(floor, config.DIR_STOP)
 		} else {
-			dir = chooseMotorDirection(floor, dir)
+			dir = queue.ChooseMotorDirection(floor, dir)
 			hw.SetMotorDirection(dir)
-			state = Moving
+			state = config.Moving
 		}
-	case Moving:
+	case config.Moving:
 		//Ignore
-	case OpenDoor:
+	case config.OpenDoor:
 	}
 
 }
@@ -66,34 +67,34 @@ func handleReachedFloor(ch Channels) {
 	floor = newFloor
 	hw.SetFloorIndicator(floor)
 	switch state {
-	case Idle:
+	case config.Idle:
 		//Ignore
-	case Moving:
-		if shouldStop(dir, floor) {
+	case config.Moving:
+		if queue.ShouldStop(dir, floor) {
 			hw.SetMotorDirection(config.DIR_STOP)
 			openDoor()
 			queue.RemoveOrder(floor, ch.Message)
 			//Få tak i direction from infoPackage her
 			handleDoorClosing(floor, dir)
 		}
-	case OpenDoor:
-		//Ignore			
+	case config.OpenDoor:
+		//Ignore
 	}
 }
 
 func handleDoorClosing(floor int, dir int) {
-	if queue.ChooseMotorDirection(floor,dir) == config.DIR_STOP {
-		state = Idle
+	if queue.ChooseMotorDirection(floor, dir) == config.DIR_STOP {
+		state = config.Idle
 	} else {
 		dir = queue.ChooseMotorDirection(floor, dir)
 		hw.SetMotorDirection(dir)
-		state = Moving
+		state = config.Moving
 	}
 }
 
 func openDoor() {
 	hw.SetDoorOpenLamp(true)
 	timer := time.NewTimer(time.Second * 3)
-	<- timer.C
+	<-timer.C
 	hw.SetDoorOpenLamp(false)
 }

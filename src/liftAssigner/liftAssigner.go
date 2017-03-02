@@ -1,6 +1,9 @@
 package liftAssigner
 
 import (
-	"./eventManager"
+	"../eventManager"
 )
 
+func liftAssigner() {
+
+}
