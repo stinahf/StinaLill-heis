@@ -1,12 +1,11 @@
 package main
 
 import (
-	//"../config"
-	//"../eventManager"
 	"../config"
+	//"../eventManager"
 	"../hw"
-	"../queue"
-	"fmt"
+	//"../queue"
+	//"fmt"
 	//"time"
 )
 
@@ -71,16 +70,24 @@ func main() {
 		}*/
 
 	hw.Init()
-	//hw.SetMotorDirection(config.DIR_UP)
-	queue.Init()
-	//queue.AddLocalOrder(2, config.BUTTON_DOWN)
-	fmt.Println("Andreas er snill som hjelper oss")
+	hw.SetMotorDirection(config.DIR_UP)
+	//queue.Init()
+	//hw.SetMotorDirection(1)
+	//queue.AddLocalOrder(2, config.BUTTON_DOWN/*, 1000*/)
+
+	/*for {
+		hw.SetMotorDirection(queue.ActuallyChooseDirection(1, config.DIR_STOP))
+		queue.ActuallyShouldStop(queue.ActuallyChooseDirection(1, config.DIR_STOP), hw.GetFloorSensorSignal())
+		time.Sleep(time.Millisecond*10)
+	}*/
+
+	//queue.AddLocalOrder(4, config.BUTTON_DOWN)
 	//TestQueueModule()
 	//queue.IsQueueEmpty()
 	//queue.ActuallyChooseDirection(1, config.DIR_STOP)
 	//queue.PrintMatrix()
 	//eventManager.Init(ch)
-	/*for { //Go har ikke while loops
+	for { //Go har ikke while loops
 		if hw.GetFloorSensorSignal() == config.N_FLOORS-1 {
 			hw.SetMotorDirection(config.DIR_DOWN)
 		} else if hw.GetFloorSensorSignal() == 0 {
@@ -91,5 +98,5 @@ func main() {
 			hw.SetMotorDirection(config.DIR_STOP)
 			//return 0
 		}
-	}*/
+	}
 }

@@ -11,7 +11,7 @@ type queue struct {
 
 type orderInfo struct {
 	active bool
-	//  elev_id int
+	//elev_id int
 	//  timer   bool
 }
 
@@ -73,11 +73,12 @@ func (q *queue) SetOrder(floor int, button int, status orderInfo) {
 	fmt.Println("Jaja")
 	q.matrix[floor][button] = status
 	fmt.Println("Oki, so far so good")
+
 	//NewOrder <- true
 }
 
-func AddLocalOrder(floor int, button int) {
-	local_queue.SetOrder(floor, button, orderInfo{true})
+func AddLocalOrder(floor int, button int/*, id int*/) {
+	local_queue.SetOrder(floor, button, orderInfo{true/*, id*/})
 }
 
 func AddSafetyOrder(floor int, button int, info orderInfo) {
@@ -139,6 +140,10 @@ func (q *queue) isOrderAbove(currentFloor int) bool {
 	return false
 }
 
+func IsOrderAbove(currentFloor int) bool {
+	return local_queue.isOrderAbove(currentFloor)
+}
+
 func (q *queue) isOrderBelow(currentFloor int) bool {
 	for floor := 0; floor < currentFloor; floor++ {
 		for button := 0; button < config.N_BUTTONS; button++ {
@@ -150,7 +155,11 @@ func (q *queue) isOrderBelow(currentFloor int) bool {
 	return false
 }
 
-func (q *queue) ShouldStop(dir int, floor int) bool {
+func IsOrderBelow(currentFloor int) bool {
+	return local_queue.isOrderBelow(currentFloor)
+}
+
+func (q *queue) shouldStop(dir int, floor int) bool {
 	switch dir {
 	case config.DIR_UP:
 		return q.matrix[floor][config.BUTTON_UP].active || q.matrix[floor][config.BUTTON_INTERNAL].active
@@ -160,6 +169,10 @@ func (q *queue) ShouldStop(dir int, floor int) bool {
 		return q.matrix[floor][config.BUTTON_DOWN].active || q.matrix[floor][config.BUTTON_INTERNAL].active || q.matrix[floor][config.BUTTON_UP].active
 	}
 	return false
+}
+
+func ActuallyShouldStop(dir int, floor int) bool {
+	return local_queue.shouldStop(dir, floor)
 }
 
 func (q *queue) ChooseMotorDirection(floor int, dir int) int {

@@ -1,9 +1,9 @@
 package Network
 
 import (
-	"conn"
-	def "config"
-	"eventManager"
+	//"conn"
+	"../config"
+	"../eventManager"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -12,14 +12,45 @@ import (
 	"time"
 )
 
+var sendMsg ElevatorMsg
+var recieveMsg ElevatorMsg
+
 func Init() {
 	ElevTx := make(chan ElevatorMsg)
+	ElevRx := make(chan ElevatorMsg)
 	go.bcast(16569, ElevTx)
+	go.bcast(16569, ElevRx)
+}
+
+func sendElevInfo(){
+	Transmitter(16569, ElevTx)
+	sendMsg.id = getIP()
+	sendMsg.ElevatorInfo = s
+	ElevTx <- sendMsg
+} 
+
+func getIP(){
+
+	ifaces, err := net.Interfaces()
+
+	for _, i := range ifaces{
+		addrs, err := i.Addrs()
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type){
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+		}
+	}
+}
 
 	/*
 	infoPackage = make(map[Id]ElevatorMsg)
 	*/
-}
+
 
 // Encodes received values from `chans` into type-tagged JSON, then broadcasts
 // it on `port`
