@@ -74,7 +74,7 @@ func (q *queue) SetOrder(floor int, button int, status orderInfo) {
 	q.matrix[floor][button] = status
 	fmt.Println("Oki, so far so good")
 
-	//NewOrder <- true
+	NewOrder <- true
 }
 
 func AddLocalOrder(floor int, button int/*, id int*/) {
@@ -91,13 +91,13 @@ func AddSafetyOrder(floor int, button int, info orderInfo) {
 	return
 }
 
-func RemoveOrder(floor int, Message chan<- config.Message) {
+func RemoveOrder(floor int/*, Message chan<- config.Message*/) {
 	for button := 0; button < config.N_BUTTONS; button++ {
 		local_queue.matrix[floor][button].active = false
 		safety_queue.matrix[floor][button].active = false
 		//somethingstoptimeronsafetyqueueorders
 	}
-	Message <- config.Message{Status: config.OrderComplete, Floor: floor}
+	//Message <- config.Message{Status: config.OrderComplete, Floor: floor}
 
 }
 

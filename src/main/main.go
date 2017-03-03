@@ -2,11 +2,11 @@ package main
 
 import (
 	"../config"
-	//"../eventManager"
+	"../eventManager"
 	"../hw"
-	//"../queue"
+	"../queue"
 	//"fmt"
-	//"time"
+	"time"
 )
 
 /*type HelloMsg struct {
@@ -70,16 +70,18 @@ func main() {
 		}*/
 
 	hw.Init()
-	hw.SetMotorDirection(config.DIR_UP)
-	//queue.Init()
-	//hw.SetMotorDirection(1)
-	//queue.AddLocalOrder(2, config.BUTTON_DOWN/*, 1000*/)
+	eventManager.Init()
+	newFloor := eventManager.pollFloors()
+	hw.SetMotorDirection(config.DIR_DOWN)
+	queue.Init()
+	queue.AddLocalOrder(2, config.BUTTON_DOWN/*, 1000*/)
+	eventManager.handleNewOrder(newFloor, config.BUTTON_DOWN, config.Idle)
 
-	/*for {
+	for {
 		hw.SetMotorDirection(queue.ActuallyChooseDirection(1, config.DIR_STOP))
 		queue.ActuallyShouldStop(queue.ActuallyChooseDirection(1, config.DIR_STOP), hw.GetFloorSensorSignal())
 		time.Sleep(time.Millisecond*10)
-	}*/
+	}
 
 	//queue.AddLocalOrder(4, config.BUTTON_DOWN)
 	//TestQueueModule()
@@ -87,7 +89,7 @@ func main() {
 	//queue.ActuallyChooseDirection(1, config.DIR_STOP)
 	//queue.PrintMatrix()
 	//eventManager.Init(ch)
-	for { //Go har ikke while loops
+	/*for { 
 		if hw.GetFloorSensorSignal() == config.N_FLOORS-1 {
 			hw.SetMotorDirection(config.DIR_DOWN)
 		} else if hw.GetFloorSensorSignal() == 0 {
@@ -97,6 +99,24 @@ func main() {
 		if hw.GetStopSignal() {
 			hw.SetMotorDirection(config.DIR_STOP)
 			//return 0
+		}
+	}*/
+}
+
+func manageEvents(ch eventManager.Channels) {
+	buttonPress := eventManager.pollButtons()
+	floorHIT := eventManager.pollFloors()
+	for {
+		select {
+		case button := <-buttonPress:
+			switch button.Button {
+			case config.BUTTON_DOWN, config.BUTTON_DOWN:
+				//SEND A MESSAGE
+			case config.BUTTON_INTERNAL:
+				queue.AddLocalOrder(button.Floor, button.Button)
+			}
+		case floor := <-floorHIT:
+			ch.ReachedFloor <- floor
 		}
 	}
 }

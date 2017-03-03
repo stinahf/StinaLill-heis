@@ -9,9 +9,9 @@ import (
 
 type Channels struct {
 	NewOrder     chan bool //Event
-	ReachedFloor chan int  //Event
 	DoorClosing  chan bool //Enten newOrder eller Idle
 	Message      chan config.Message
+	ReachedFloor chan int
 }
 
 var floor int
@@ -25,7 +25,7 @@ func Init(ch Channels) {
 	dir = config.DIR_STOP
 	floor = 0
 
-	go eventManager(ch)
+	go eventManager(ch, cha)
 
 }
 
@@ -40,16 +40,16 @@ func eventManager(ch Channels) {
 	}
 }
 
-func handleNewOrder(ch Channels) {
+func handleNewOrder(/*ch Channels, */floor int, button int, state int) {
 	/*floor = queue.GetFloorFromQueue()
 	button = queue.GetButtonFromQueue()*/
-	hw.SetButtonLamp(floor, button, true)
+	hw.SetButtonLamp(2, button, true)
 	switch state {
 	case config.Idle:
 		if queue.ActuallyShouldStop(config.DIR_STOP, floor) {
 			openDoor()
-			queue.RemoveOrder(floor, ch.Message) //Fikset, sjekk at funker
-			floor = queue.GetFloorFromQueue()
+			queue.RemoveOrder(floor/*, ch.Message*/) //Fikset, sjekk at funker
+			//floor = queue.GetFloorFromQueue()
 			handleDoorClosing(floor, config.DIR_STOP)
 		} else {
 			dir = queue.ActuallyChooseDirection(floor, dir)
@@ -65,8 +65,6 @@ func handleNewOrder(ch Channels) {
 }
 
 func handleReachedFloor(ch Channels) {
-	/*floor = hw.GetFloorSensorSignal()
-	hw.SetFloorIndicator(floor)*/
 	switch state {
 	case config.Idle:
 		//Ignore
@@ -74,7 +72,7 @@ func handleReachedFloor(ch Channels) {
 		if queue.ActuallyShouldStop(dir, floor) {
 			hw.SetMotorDirection(config.DIR_STOP)
 			openDoor()
-			queue.RemoveOrder(floor, ch.Message)
+			queue.RemoveOrder(floor/*, ch.Message*/)
 			//Få tak i direction from infoPackage her
 			handleDoorClosing(floor, dir)
 		}
@@ -100,20 +98,21 @@ func openDoor() {
 	hw.SetDoorOpenLamp(false)
 }
 
-func pollFloors() {
-
+func pollFloors() <-chan int{
+	arrivedFloor := make(chan int)
 	oldFloor := hw.GetFloorSensorSignal()
 	go func() {
 		for {
 			newFloor := hw.GetFloorSensorSignal()
 			if newFloor != oldFloor && newFloor != -1 {
-				ReachedFloor <- newFloor
+				arrivedFloor <- newFloor
 			}
 
 			oldFloor = newFloor
 			time.Sleep(time.Millisecond * 100)
 		}
 	}()
+	return arrivedFloor
 }
 
 func pollButtons() <-chan config.OrderInfo {
