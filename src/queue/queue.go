@@ -11,11 +11,6 @@ type queue struct {
 	matrix [config.N_FLOORS][config.N_BUTTONS]orderInfo
 }
 
-type orderInfo struct {
-	active bool
-	//elev_id int
-	timer  *time.Timer 'json:"-"'
-}
 
 var newOrder chan bool
 var newLocalOrder chan bool

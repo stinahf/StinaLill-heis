@@ -16,18 +16,50 @@ var sendMsg ElevatorMsg
 var recieveMsg ElevatorMsg
 
 func Init() {
-	ElevTx := make(chan ElevatorMsg)
-	ElevRx := make(chan ElevatorMsg)
-	go.bcast(16569, ElevTx)
-	go.bcast(16569, ElevRx)
+	InfoPackage = make(map[Id]ElevatorInfo)
+	ElevTx := make(chan Message)
+	ElevRx := make(chan Message)
+	sendElevInfo := make(chan ElevatorMsg)
+	recieveElevInfo := make(chan ElevatorMsg)
+
+	go bcast(16569, ElevTx)
+	go bcast(16569, ElevRx)
 }
 
-func sendElevInfo(){
-	Transmitter(16569, ElevTx)
-	sendMsg.id = getIP()
-	sendMsg.ElevatorInfo = s
-	ElevTx <- sendMsg
-} 
+func NetworkHandler() {
+	for {
+		select {
+		case sendElevMsg := <- sendElevInfo:
+			sendInfoPacket(sendElevMsg)
+		case recieveElevMsg := <- recieveElevInfo:
+			recieveInfoPacket(recieveElevMsg)
+		case sendMsg := <- ElevTx:
+			if sendMsg.config.State == config.OrderComplete:
+				// bcast orderComplete 
+		case recieveMsg := <- ElevTx:
+			if recieveMsg.config.State == config.OrderComplete {
+				
+			}
+
+
+
+		}
+	}
+}
+
+func sendInfoPacket(sendInfo chan <- config.ElevatorMsg) {
+	IP := getIP()
+	sendPacket := config.ElevatorMsg{Id: IP, CurrentFloor: config.ElevatorInfo.CurrentFloor, MotorDir: config.ElevatorInfo.MotorDir, State: config.ElevatorInfo.State}
+	for {
+		sendInfo <- sendPacket
+		time.Sleep(time.Millisecond * 100)
+	}
+}
+
+func receiveInfoPacket(receiveInfo chan <- config.ElevatorMsg) {
+	InfoPackage[Id] = ElevatorInfo{CurrentFloor: sendPacket.CurrentFloor, MotorDir: sendPacket.MotorDir, State: sendPacket.State}
+}
+
 
 func getIP(){
 
@@ -47,9 +79,8 @@ func getIP(){
 	}
 }
 
-	/*
-	infoPackage = make(map[Id]ElevatorMsg)
-	*/
+func 
+	
 
 
 // Encodes received values from `chans` into type-tagged JSON, then broadcasts
@@ -156,24 +187,3 @@ func checkArgs(chans ...interface{}) {
 		}
 	}
 }
-
-func infoSpammer() {
-		
-
-
-
-	const spamInterval = 100*time.Millisecond
-	info := config.ElevatorMsg{Id: /*IP HER*/, CurrentFloor: -1, MotorDir: -1, State: -1}
-	for {
-		Message <- info
-		time.Sleep(spamInterval)
-	}
-}
-
-helloMsg := HelloMsg{"Hello from us", 0}
-		for {
-			helloMsg.Iter++
-			helloTx <- helloMsg
-			time.Sleep(1 * time.Second)
-		}
-	}

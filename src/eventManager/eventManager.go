@@ -18,9 +18,9 @@ type Channels struct {
 	DoorTimerReset chan bool
 }
 
-var floor int
-var dir   int
-var state int
+floor := config.ElevatorInfo.CurrentFloor
+dir   := config.ElevatorInfo.MotorDir
+state := config.ElevatorInfo.State
 
 func Init(ch Channels) {
 	state = config.Idle

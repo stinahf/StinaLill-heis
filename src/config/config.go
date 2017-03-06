@@ -21,12 +21,10 @@ type ElevatorInfo struct {
 	CurrentFloor int
 	MotorDir     int
 	State        int
-	//State //If we opt to have states
-	//Queue something something
 }
 
 type ElevatorMsg struct {
-	Id   int
+	Id   string
 	info ElevatorInfo
 }
 
@@ -52,6 +50,11 @@ const (
 	DoorClosing = 2
 )
 
-/*
-var infoPackage map[Id]ElevatorMsg
-*/
+type OrderInfo struct {
+	active bool
+	elev_id string
+	timer  *time.Timer 'json:"-"'
+}
+
+var InfoPackage map[Id]ElevatorInfo
+

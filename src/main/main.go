@@ -27,19 +27,6 @@ func f() {
 	}
 }*/
 
-/*func TestQueueModule() {
-	for {
-		for i := 0; i < config.N_FLOORS; i++ {
-			for j := 0; j < config.N_BUTTONS; j++ {
-				if hw.GetButtonSignal(i, j) {
-					queue.AddLocalOrder(i, j)
-				}
-			}
-		}
-		hw.SetMotorDirection(queue.ActuallyChooseDirection(1, config.DIR_STOP))
-	}
-}*/
-
 func main() {
 	/*
 		helloTx := make(chan HelloMsg)
@@ -87,24 +74,7 @@ func main() {
 	go manageEvents(ch)
 
 	time.Sleep(time.Second * 300)
-	//queue.AddLocalOrder(4, config.BUTTON_DOWN)
-	//TestQueueModule()
-	//queue.IsQueueEmpty()
-	//queue.ActuallyChooseDirection(1, config.DIR_STOP)
-	//queue.PrintMatrix()
-	//eventManager.Init(ch)
-	/*for { 
-		if hw.GetFloorSensorSignal() == config.N_FLOORS-1 {
-			hw.SetMotorDirection(config.DIR_DOWN)
-		} else if hw.GetFloorSensorSignal() == 0 {
-			hw.SetMotorDirection(config.DIR_UP)
-		}
 
-		if hw.GetStopSignal() {
-			hw.SetMotorDirection(config.DIR_STOP)
-			//return 0
-		}
-	}*/
 }
 
 func manageEvents(ch eventManager.Channels) {
