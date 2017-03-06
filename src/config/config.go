@@ -47,9 +47,9 @@ const (
 )
 
 const (
-	Idle     = 0
-	Moving   = 1
-	OpenDoor = 2
+	Idle        = 0
+	Moving      = 1
+	DoorClosing = 2
 )
 
 /*

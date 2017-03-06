@@ -44,10 +44,12 @@ func Init() error {
 	//Move to init floor (1st floor)
 	SetMotorDirection(config.DIR_DOWN)
 	floor := GetFloorSensorSignal()
+	if floor == 0 {
+			SetMotorDirection(config.DIR_STOP)
+		}
 	for floor == -1 {
 		floor = GetFloorSensorSignal()
 	}
-	SetMotorDirection(config.DIR_STOP)
 	SetFloorIndicator(floor)
 
 	fmt.Println("Hw initialized")
@@ -142,7 +144,7 @@ func GetButtonSignal(button int, floor int) bool {
 		return false
 	}
 	if button == config.BUTTON_DOWN && floor == 0 {
-		log.Println("You are already at the buttom")
+		log.Println("You are already at the bottom")
 		return false
 	}
 	if ioReadBit(button_channel_matrix[floor][button]) {

@@ -69,20 +69,24 @@ func main() {
 			}
 		}*/
 
-	hw.Init()
-	eventManager.Init()
-	newFloor := eventManager.pollFloors()
-	hw.SetMotorDirection(config.DIR_DOWN)
-	queue.Init()
-	queue.AddLocalOrder(2, config.BUTTON_DOWN/*, 1000*/)
-	eventManager.handleNewOrder(newFloor, config.BUTTON_DOWN, config.Idle)
-
-	for {
-		hw.SetMotorDirection(queue.ActuallyChooseDirection(1, config.DIR_STOP))
-		queue.ActuallyShouldStop(queue.ActuallyChooseDirection(1, config.DIR_STOP), hw.GetFloorSensorSignal())
-		time.Sleep(time.Millisecond*10)
+	ch := eventManager.Channels{
+		NewOrder: make(chan bool),
+		ReachedFloor: make(chan int),
+		Message: make(chan config.Message),
+		MotorDir: make(chan int),
+		DoorLamp: make(chan bool),
+		//DoorTimerReset: make(chan bool),
+		//DoorTimeout: make(chan bool),
 	}
 
+	hw.Init()
+	eventManager.Init(ch)
+	hw.SetMotorDirection(config.DIR_DOWN)
+	queue.Init(ch.NewOrder)
+
+	go manageEvents(ch)
+
+	time.Sleep(time.Second * 300)
 	//queue.AddLocalOrder(4, config.BUTTON_DOWN)
 	//TestQueueModule()
 	//queue.IsQueueEmpty()
@@ -104,19 +108,23 @@ func main() {
 }
 
 func manageEvents(ch eventManager.Channels) {
-	buttonPress := eventManager.pollButtons()
-	floorHIT := eventManager.pollFloors()
+	buttonPress := eventManager.PollButtons()
+	floorHIT := eventManager.PollFloors()
 	for {
 		select {
 		case button := <-buttonPress:
 			switch button.Button {
-			case config.BUTTON_DOWN, config.BUTTON_DOWN:
-				//SEND A MESSAGE
+			case config.BUTTON_UP, config.BUTTON_DOWN:
+				queue.AddLocalOrder(button.Floor, button.Button, 1000)
 			case config.BUTTON_INTERNAL:
-				queue.AddLocalOrder(button.Floor, button.Button)
+				queue.AddLocalOrder(button.Floor, button.Button, 1000)
 			}
 		case floor := <-floorHIT:
 			ch.ReachedFloor <- floor
+		case dir := <-ch.MotorDir:
+			hw.SetMotorDirection(dir)
+		case value := <-ch.DoorLamp:
+			hw.SetDoorOpenLamp(value)
 		}
 	}
 }
