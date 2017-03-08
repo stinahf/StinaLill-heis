@@ -7,28 +7,31 @@ import (
 	"time"
 )
 
+type orderInfo struct {
+	active  bool
+	elev_id string      `json:"-"`
+	timer   *time.Timer `json:"-"`
+}
+
 type queue struct {
 	matrix [config.N_FLOORS][config.N_BUTTONS]orderInfo
 }
 
-
 var newOrder chan bool
 var newLocalOrder chan bool
-var OrderTimeout chan config.OrderInfo
-
+var OrderTimeout chan orderInfo
+var message chan config.Message
 
 //var newOrder
 
 var local_queue queue
 var safety_queue queue
 
-
-func Init(newOrderTemp chan bool) {
+func Init(newOrderTemp chan bool, messageTemp chan config.Message) {
+	message = messageTemp
 	newOrder = newOrderTemp
 	newLocalOrder = make(chan bool)
-	OrderTimeout = make(chan config.OrderInfo)
-
-	//ch.newOrder = make(chan bool)
+	OrderTimeout = make(chan orderInfo)
 
 	fmt.Println("Queue initialized")
 
@@ -44,8 +47,8 @@ func (q *queue) setOrder(floor int, button int, status orderInfo) {
 	newOrder <- true
 }
 
-func AddLocalOrder(floor int, button int, id int) {
-	local_queue.setOrder(floor, button, orderInfo{true/*, id*/, nil})
+func AddLocalOrder(floor int, button int, id string) {
+	local_queue.setOrder(floor, button, orderInfo{true, id, nil})
 }
 
 func AddSafetyOrder(floor int, button int, info orderInfo) {
@@ -53,18 +56,19 @@ func AddSafetyOrder(floor int, button int, info orderInfo) {
 		if safety_queue.matrix[floor][button].active == info.active {
 			return
 		} else {
-			safety_queue.setOrder(floor, button, orderStatus{true, nil})
+			safety_queue.setOrder(floor, button, info)
 			go safety_queue.startTimer(floor, button)
-			
+
 		}
 	}
 	return
 }
 
-func (q *queue) startTimer(floor, button int) {
+func (q *queue) startTimer(floor, button int) { //, Message chan<- config.Message ?? input
 	q.matrix[floor][button].timer = time.NewTimer(time.Second * 30)
 	<-q.matrix[floor][button].timer.C
-	OrderTimeout <- OrderInfo{Floor: floor, Button: button}
+
+	message <- config.Message{OrderComplete: false, Floor: floor}
 }
 
 func (q *queue) stopTimer(floor, button int) {
@@ -73,13 +77,13 @@ func (q *queue) stopTimer(floor, button int) {
 	}
 }
 
-func RemoveOrder(floor int) { //Husk, ta inn: , Message chan<- config.Message
+func RemoveOrder(floor int) { //Message chan<- config.Message
 	for button := 0; button < config.N_BUTTONS; button++ {
-		local_queue.matrix[floor][button].active = false 
+		local_queue.matrix[floor][button].active = false
 		safety_queue.matrix[floor][button].active = false
 		hw.SetButtonLamp(button, floor, false)
 	}
-	//Message <- config.Message{Status: config.OrderComplete, Floor: floor}
+	message <- config.Message{OrderComplete: true, Floor: floor}
 }
 
 func RemoveSafetyOrder(floor int, info orderInfo) {
@@ -109,7 +113,7 @@ func (q *queue) IsQueueEmpty() bool {
 	return true
 }
 
-func IsQueueEmpty() bool{
+func IsQueueEmpty() bool {
 	return local_queue.IsQueueEmpty()
 }
 

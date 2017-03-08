@@ -24,8 +24,10 @@ func liftAssigner(floor, button) {
 			}
 		}
 	}
-	if numFittedLifts < 1{
-		for id, elevatorInfo := infoPackage {
+
+	for id, elevatorInfo := infoPackage{
+		if numFittedLifts < 1{
+		
 			if infoPackage[id].state == idle{
 				queue.AddLocalQueue(floor, button, id)
 				numFittedLifts++;
@@ -33,6 +35,7 @@ func liftAssigner(floor, button) {
 			}
 		}
 	}
+	
 	if numFittedLifts < 1{
 		queue.AddLocalQueue(floor, button, infoPackage[id].id)
 	}

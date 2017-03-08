@@ -1,11 +1,12 @@
 package main
 
 import (
+	"../Network"
 	"../config"
 	"../eventManager"
 	"../hw"
 	"../queue"
-	//"fmt"
+	"fmt"
 	"time"
 )
 
@@ -57,27 +58,35 @@ func main() {
 		}*/
 
 	ch := eventManager.Channels{
-		NewOrder: make(chan bool),
+		NewOrder:     make(chan bool),
 		ReachedFloor: make(chan int),
-		Message: make(chan config.Message),
-		MotorDir: make(chan int),
-		DoorLamp: make(chan bool),
+		MotorDir:     make(chan int),
+		DoorLamp:     make(chan bool),
 		//DoorTimerReset: make(chan bool),
 		//DoorTimeout: make(chan bool),
 	}
 
+	channels := Network.ReceiveChannels{
+		ReceiveMessage:       make(chan config.Message),
+		ReceiveInfo:          make(chan config.ElevatorMsg),
+		ReceiveExternalOrder: make(chan config.OrderInfo),
+	}
+
+	Network.Message = make(chan config.Message)
+	NewExternalOrder := make(chan config.OrderInfo)
+
 	hw.Init()
 	eventManager.Init(ch)
 	hw.SetMotorDirection(config.DIR_DOWN)
-	queue.Init(ch.NewOrder)
-
-	go manageEvents(ch)
+	queue.Init(ch.NewOrder, Network.Message)
+	Network.Init(NewExternalOrder, channels)
+	go manageEvents(ch, NewExternalOrder)
 
 	time.Sleep(time.Second * 300)
 
 }
 
-func manageEvents(ch eventManager.Channels) {
+func manageEvents(ch eventManager.Channels, New chan config.OrderInfo) {
 	buttonPress := eventManager.PollButtons()
 	floorHIT := eventManager.PollFloors()
 	for {
@@ -85,9 +94,9 @@ func manageEvents(ch eventManager.Channels) {
 		case button := <-buttonPress:
 			switch button.Button {
 			case config.BUTTON_UP, config.BUTTON_DOWN:
-				queue.AddLocalOrder(button.Floor, button.Button, 1000)
+				New <- button //IKKE MESSAGE
 			case config.BUTTON_INTERNAL:
-				queue.AddLocalOrder(button.Floor, button.Button, 1000)
+				queue.AddLocalOrder(button.Floor, button.Button, "1000")
 			}
 		case floor := <-floorHIT:
 			ch.ReachedFloor <- floor

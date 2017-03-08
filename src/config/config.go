@@ -17,15 +17,11 @@ const (
 	DIR_DOWN = -1
 )
 
-type ElevatorInfo struct {
+type ElevatorMsg struct {
+	Id           string
 	CurrentFloor int
 	MotorDir     int
 	State        int
-}
-
-type ElevatorMsg struct {
-	Id   string
-	info ElevatorInfo
 }
 
 type OrderInfo struct {
@@ -33,16 +29,12 @@ type OrderInfo struct {
 	Floor  int
 }
 
-type Message struct {
-	Status int
-	Floor  int
-	Button int
-}
+var ExternalOrderInfo OrderInfo
 
-const (
-	NewOrder      = 1
-	OrderComplete = 2
-)
+type Message struct {
+	OrderComplete bool
+	Floor         int
+}
 
 const (
 	Idle        = 0
@@ -50,11 +42,4 @@ const (
 	DoorClosing = 2
 )
 
-type OrderInfo struct {
-	active bool
-	elev_id string
-	timer  *time.Timer 'json:"-"'
-}
-
-var InfoPackage map[Id]ElevatorInfo
-
+var InfoPackage map[string]ElevatorMsg

@@ -4,25 +4,25 @@ import (
 	"../config"
 	"../hw"
 	"../queue"
-	"time"
 	"fmt"
+	"time"
 )
 
 type Channels struct {
 	NewOrder       chan bool
-	DoorLamp       chan bool 
-	Message        chan config.Message
+	DoorLamp       chan bool
 	ReachedFloor   chan int
 	MotorDir       chan int
 	DoorTimeout    chan bool
 	DoorTimerReset chan bool
 }
 
-floor := config.ElevatorInfo.CurrentFloor
-dir   := config.ElevatorInfo.MotorDir
-state := config.ElevatorInfo.State
+var floor int
+var dir int
+var state int
 
 func Init(ch Channels) {
+
 	state = config.Idle
 	dir = config.DIR_STOP
 	floor = 0
@@ -35,8 +35,8 @@ func Init(ch Channels) {
 
 }
 
-func Floor() int {
-	return floor
+func GetFloorDirState() (int, int, int) {
+	return floor, dir, state
 }
 
 func eventManager(ch Channels) {
@@ -55,7 +55,7 @@ func eventManager(ch Channels) {
 func handleNewOrder(ch Channels) {
 
 	fmt.Println("Jeg skal utføre en ordre!")
-	
+
 	switch state {
 	case config.Idle:
 		dir = queue.ActuallyChooseDirection(floor, dir)
@@ -106,19 +106,19 @@ func handleDoorClosing(ch Channels) {
 	}
 }
 
-func OpenDoor(doorTimeout chan <- bool, resetTimer <- chan bool) {
+func OpenDoor(doorTimeout chan<- bool, resetTimer <-chan bool) {
 	hw.SetDoorOpenLamp(true)
 	timer := time.NewTimer(0)
 	timer.Stop()
 	hw.SetDoorOpenLamp(false)
 
-	for{
-		select{
-		case <- resetTimer:
+	for {
+		select {
+		case <-resetTimer:
 			hw.SetDoorOpenLamp(true)
-			timer.Reset(3*time.Second)
+			timer.Reset(3 * time.Second)
 			hw.SetDoorOpenLamp(false)
-		case <- timer.C:
+		case <-timer.C:
 			timer.Stop()
 			doorTimeout <- true
 		}
@@ -156,17 +156,15 @@ func PollButtons() <-chan config.OrderInfo {
 					}
 
 					if hw.GetButtonSignal(button, floor) {
-						
-							buttonPress <- config.OrderInfo{Button: button, Floor: floor}
-							hw.SetButtonLamp(button, floor, true)
-						}
-						
-		
+
+						buttonPress <- config.OrderInfo{Button: button, Floor: floor}
+						hw.SetButtonLamp(button, floor, true)
+					}
+
 				}
 			}
 			time.Sleep(time.Millisecond * 100)
 		}
 	}()
-	return buttonPress		
+	return buttonPress
 }
-

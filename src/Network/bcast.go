@@ -5,6 +5,7 @@ import (
 	"../config"
 	"../eventManager"
 	"encoding/json"
+	//"errors"
 	"fmt"
 	"net"
 	"reflect"
@@ -12,76 +13,107 @@ import (
 	"time"
 )
 
-var sendMsg ElevatorMsg
-var recieveMsg ElevatorMsg
+var Message chan config.Message
+var newExternalOrder chan config.OrderInfo
 
-func Init() {
-	InfoPackage = make(map[Id]ElevatorInfo)
-	ElevTx := make(chan Message)
-	ElevRx := make(chan Message)
-	sendElevInfo := make(chan ElevatorMsg)
-	recieveElevInfo := make(chan ElevatorMsg)
-
-	go bcast(16569, ElevTx)
-	go bcast(16569, ElevRx)
+type ReceiveChannels struct {
+	ReceiveMessage       chan config.Message
+	ReceiveInfo          chan config.ElevatorMsg
+	ReceiveExternalOrder chan config.OrderInfo
 }
 
-func NetworkHandler() {
+func Init(newExternalOrderTemp chan config.OrderInfo, ch ReceiveChannels) {
+	newExternalOrder = newExternalOrderTemp
+	config.InfoPackage = make(map[string]config.ElevatorMsg)
+
+	sendInfo := sendInfoPacket()
+
+	go Transmitter(16569, newExternalOrder, sendInfo, Message)
+	go Receiver(16569, ch.ReceiveExternalOrder, ch.ReceiveInfo, ch.ReceiveMessage)
+
+	go NetworkHandler(ch)
+
+	fmt.Println("Network is initialized")
+}
+
+func NetworkHandler(ch ReceiveChannels) {
 	for {
 		select {
-		case sendElevMsg := <- sendElevInfo:
-			sendInfoPacket(sendElevMsg)
-		case recieveElevMsg := <- recieveElevInfo:
-			recieveInfoPacket(recieveElevMsg)
-		case sendMsg := <- ElevTx:
-			if sendMsg.config.State == config.OrderComplete:
-				// bcast orderComplete 
-		case recieveMsg := <- ElevTx:
-			if recieveMsg.config.State == config.OrderComplete {
-				
-			}
-
-
-
+		case receiveElevMsg := <-ch.ReceiveInfo:
+			receiveInfoPacket(receiveElevMsg)
+		case receiveMsg := <-ch.ReceiveMessage:
+			receiveOrderInfo(receiveMsg)
+		case receiveExt := <-ch.ReceiveExternalOrder:
+			receiveExternalOrder(receiveExt)
 		}
 	}
 }
 
-func sendInfoPacket(sendInfo chan <- config.ElevatorMsg) {
-	IP := getIP()
-	sendPacket := config.ElevatorMsg{Id: IP, CurrentFloor: config.ElevatorInfo.CurrentFloor, MotorDir: config.ElevatorInfo.MotorDir, State: config.ElevatorInfo.State}
-	for {
-		sendInfo <- sendPacket
-		time.Sleep(time.Millisecond * 100)
+func receiveExternalOrder(receiveExternal config.OrderInfo) {
+	config.ExternalOrderInfo = config.OrderInfo{Floor: receiveExternal.Floor, Button: receiveExternal.Button}
+}
+
+func receiveOrderInfo(receiveMsg config.Message) int {
+	if receiveMsg.OrderComplete == true {
+		return receiveMsg.Floor
 	}
+	return -1
 }
 
-func receiveInfoPacket(receiveInfo chan <- config.ElevatorMsg) {
-	InfoPackage[Id] = ElevatorInfo{CurrentFloor: sendPacket.CurrentFloor, MotorDir: sendPacket.MotorDir, State: sendPacket.State}
+func receiveInfoPacket(receivePacket config.ElevatorMsg) {
+	config.InfoPackage[receivePacket.Id] = config.ElevatorMsg{receivePacket.Id, receivePacket.CurrentFloor, receivePacket.MotorDir, receivePacket.State}
 }
 
+func sendInfoPacket() <-chan config.ElevatorMsg {
+	sendInfo := make(chan config.ElevatorMsg)
+	IP := getIP()
+	Floor, Dir, State := eventManager.GetFloorDirState()
+	sendPacket := config.ElevatorMsg{IP, Floor, Dir, State}
+	go func() {
+		for {
+			sendInfo <- sendPacket
+			time.Sleep(time.Millisecond * 100)
+		}
+	}()
+	return sendInfo
+}
 
-func getIP(){
-
+func getIP() string {
 	ifaces, err := net.Interfaces()
-
-	for _, i := range ifaces{
-		addrs, err := i.Addrs()
+	if err != nil {
+		return "" //, err
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 {
+			continue // interface down
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue // loopback interface
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return "" //, err
+		}
 		for _, addr := range addrs {
 			var ip net.IP
-			switch v := addr.(type){
+			switch v := addr.(type) {
 			case *net.IPNet:
 				ip = v.IP
 			case *net.IPAddr:
 				ip = v.IP
 			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			ip = ip.To4()
+			if ip == nil {
+				continue // not an ipv4 address
+			}
+			return ip.String()
 		}
 	}
+	return "" //, errors.New("are you connected to the network?")
 }
-
-func 
-	
-
 
 // Encodes received values from `chans` into type-tagged JSON, then broadcasts
 // it on `port`
@@ -103,7 +135,7 @@ func Transmitter(port int, chans ...interface{}) {
 		typeNames[i] = reflect.TypeOf(ch).Elem().String()
 	}
 
-	conn := conn.DialBroadcastUDP(port)
+	conn := DialBroadcastUDP(port)
 	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("255.255.255.255:%d", port))
 	for {
 		chosen, value, _ := reflect.Select(selectCases)
@@ -118,7 +150,7 @@ func Receiver(port int, chans ...interface{}) {
 	checkArgs(chans...)
 
 	var buf [1024]byte
-	conn := conn.DialBroadcastUDP(port)
+	conn := DialBroadcastUDP(port)
 	for {
 		n, _, _ := conn.ReadFrom(buf[0:])
 		for _, ch := range chans {

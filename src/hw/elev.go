@@ -44,12 +44,10 @@ func Init() error {
 	//Move to init floor (1st floor)
 	SetMotorDirection(config.DIR_DOWN)
 	floor := GetFloorSensorSignal()
-	if floor == 0 {
-			SetMotorDirection(config.DIR_STOP)
-		}
 	for floor == -1 {
 		floor = GetFloorSensorSignal()
 	}
+	SetMotorDirection(config.DIR_STOP)
 	SetFloorIndicator(floor)
 
 	fmt.Println("Hw initialized")
