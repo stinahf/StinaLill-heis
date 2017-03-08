@@ -40,20 +40,26 @@ func NetworkHandler(ch ReceiveChannels) {
 	for {
 		select {
 		case receiveElevMsg := <-ch.ReceiveInfo:
+			fmt.Println("Jippi! Vi kom frem til ReceiveInfo")
 			receiveInfoPacket(receiveElevMsg)
 		case receiveMsg := <-ch.ReceiveMessage:
+			fmt.Println("Jeg har fjernet en ordre korrekt")
 			receiveOrderInfo(receiveMsg)
 		case receiveExt := <-ch.ReceiveExternalOrder:
+			fmt.Println("Jeg har fått en ekstern ordre")
 			receiveExternalOrder(receiveExt)
 		}
 	}
 }
 
 func receiveExternalOrder(receiveExternal config.OrderInfo) {
-	config.ExternalOrderInfo = config.OrderInfo{Floor: receiveExternal.Floor, Button: receiveExternal.Button}
+	config.ExternalOrderInfo = config.OrderInfo{receiveExternal.Button, receiveExternal.Floor}
+	fmt.Println(config.ExternalOrderInfo)
+	fmt.Println("Jeg har mottatt og sendt videre at vi har en ekstern orde.")
 }
 
 func receiveOrderInfo(receiveMsg config.Message) int {
+	fmt.Println("Mottatt ordreinfo")
 	if receiveMsg.OrderComplete == true {
 		return receiveMsg.Floor
 	}
@@ -62,15 +68,16 @@ func receiveOrderInfo(receiveMsg config.Message) int {
 
 func receiveInfoPacket(receivePacket config.ElevatorMsg) {
 	config.InfoPackage[receivePacket.Id] = config.ElevatorMsg{receivePacket.Id, receivePacket.CurrentFloor, receivePacket.MotorDir, receivePacket.State}
+	fmt.Println(config.InfoPackage[receivePacket.Id])
 }
 
 func sendInfoPacket() <-chan config.ElevatorMsg {
 	sendInfo := make(chan config.ElevatorMsg)
 	IP := getIP()
-	Floor, Dir, State := eventManager.GetFloorDirState()
-	sendPacket := config.ElevatorMsg{IP, Floor, Dir, State}
 	go func() {
 		for {
+			Floor, Dir, State := eventManager.GetFloorDirState()
+			sendPacket := config.ElevatorMsg{IP, Floor, Dir, State}
 			sendInfo <- sendPacket
 			time.Sleep(time.Millisecond * 100)
 		}
