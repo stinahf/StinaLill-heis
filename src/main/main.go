@@ -7,63 +7,20 @@ import (
 	"../hw"
 	"../queue"
 	//"fmt"
-	"time"
+	//"time"
+	"../liftAssigner"
 )
 
-/*type HelloMsg struct {
-	Message string
-	Iter int
-}
-
-func f() {
-	for {
-		select {
-		case hello := <-helloRx:
-			// do some code
-		case elev := <-elevRx:
-			// do some other code
-			//elev.ID
-
-		}
-	}
-}*/
-
 func main() {
-	/*
-		helloTx := make(chan HelloMsg)
-		helloRx := make(chan HelloMsg)
-		elevTx := make(chan ElevatorInfo)
-		elevRx := make(chan ElevatorInfo)
 
-		go bcast.Transmitter(16569, helloTx, elevTx)
-		go bcast.Receiver(16569, helloRx, elevRx)
-
-		go f()
-	*/
-	//go func() {
-	/*	helloMsg := HelloMsg{"Hello from us", 0}
-			for {
-				helloMsg.Iter++
-				helloTx <- helloMsg
-				time.Sleep(1 * time.Second)
-			}
-		}//()
-
-		fmt.Println("Started")
-		for {
-			select {
-			case a := <-helloRx:
-				fmt.Printf("Received: %#v\n", a)
-			}
-		}*/
 
 	ch := eventManager.Channels{
 		NewOrder:     make(chan bool),
 		ReachedFloor: make(chan int),
 		MotorDir:     make(chan int),
 		DoorLamp:     make(chan bool),
-		//DoorTimerReset: make(chan bool),
-		//DoorTimeout: make(chan bool),
+		DoorTimerReset: make(chan bool),
+		DoorTimeout: make(chan bool),
 	}
 
 	channels := Network.ReceiveChannels{
@@ -76,27 +33,46 @@ func main() {
 	NewExternalOrder := make(chan config.OrderInfo)
 
 	hw.Init()
-	eventManager.Init(ch)
+	eventManager.Init()
 	hw.SetMotorDirection(config.DIR_DOWN)
 	queue.Init(ch.NewOrder, Network.Message)
-	Network.Init(NewExternalOrder, channels)
-	go manageEvents(ch, NewExternalOrder)
+	Network.Init()
 
-	time.Sleep(time.Second * 300)
+	sendInfo := Network.SendInfoPacket()
+
+	go Network.Transmitter(16569, Network.Message)
+	go Network.Receiver(16569, channels.ReceiveMessage)
+
+	go Network.Transmitter(16571, NewExternalOrder)
+	go Network.Receiver(16571, channels.ReceiveExternalOrder)
+
+	go Network.Transmitter(16570, sendInfo)
+	go Network.Receiver(16570, channels.ReceiveInfo)
+
+	go Network.NetworkHandler(channels)
+
+	go eventManager.EventManager(ch)
+	go eventManager.OpenDoor(ch.DoorTimeout, ch.DoorTimerReset)
+
+	manageEvents(ch, NewExternalOrder, channels)
+
+	//time.Sleep(time.Second * 3600)
 
 }
 
-func manageEvents(ch eventManager.Channels, New chan config.OrderInfo) {
-	buttonPress := eventManager.PollButtons()
-	floorHIT := eventManager.PollFloors()
+func manageEvents(ch eventManager.Channels, New chan config.OrderInfo, channels Network.ReceiveChannels) {
+	buttonPress := make(chan config.OrderInfo)
+	go eventManager.PollButtons(buttonPress)
+	floorHIT := make(chan int)
+	go eventManager.PollFloors(floorHIT)
 	for {
 		select {
 		case button := <-buttonPress:
 			switch button.Button {
 			case config.BUTTON_UP, config.BUTTON_DOWN:
-				New <- button //IKKE MESSAGE
+				New <- button
 			case config.BUTTON_INTERNAL:
-				queue.AddLocalOrder(button.Floor, button.Button, "1000")
+				queue.AddLocalOrder(button.Floor, button.Button)
 			}
 		case floor := <-floorHIT:
 			ch.ReachedFloor <- floor
@@ -104,6 +80,8 @@ func manageEvents(ch eventManager.Channels, New chan config.OrderInfo) {
 			hw.SetMotorDirection(dir)
 		case value := <-ch.DoorLamp:
 			hw.SetDoorOpenLamp(value)
+		case messageInfo := <-channels.ReceiveMessage:
+			liftAssigner.HandleExternalOrderStatus(messageInfo)
 		}
 	}
 }

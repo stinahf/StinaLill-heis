@@ -8,12 +8,13 @@ import (
 )
 
 var fittedLiftId string
-var minDistance int
+var numLiftsIdle int
+
 
 
 func CalculateBestFit(floor int, button int) {
-	numFittedLifts = 0
-	minDistance = 5 
+	numFittedLifts := 0
+	minDistance := 5 
 	distance :=  floor - config.InfoPackage[config.IP].CurrentFloor 
 	fmt.Println("Jeg gikk inn i CalculateBestFit")
 

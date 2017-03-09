@@ -7,19 +7,19 @@ import (
 	"time"
 )
 
-type orderInfo struct {
-	active  bool
-	elev_id string      `json:"-"`
-	timer   *time.Timer `json:"-"`
+type OrderInfo struct {
+	Active  bool
+	Elev_id string      `json:"-"`
+	Timer   *time.Timer `json:"-"`
 }
 
 type queue struct {
-	matrix [config.N_FLOORS][config.N_BUTTONS]orderInfo
+	matrix [config.N_FLOORS][config.N_BUTTONS]OrderInfo
 }
 
 var newOrder chan bool
 var newLocalOrder chan bool
-var OrderTimeout chan orderInfo
+var OrderTimeout chan OrderInfo
 var message chan config.Message
 
 //var newOrder
@@ -31,64 +31,57 @@ func Init(newOrderTemp chan bool, messageTemp chan config.Message) {
 	message = messageTemp
 	newOrder = newOrderTemp
 	newLocalOrder = make(chan bool)
-	OrderTimeout = make(chan orderInfo)
+	OrderTimeout = make(chan OrderInfo)
 
 	fmt.Println("Queue initialized")
 
 }
 
-func (q *queue) setOrder(floor int, button int, status orderInfo) {
-	if q.matrix[floor][button].active == status.active {
+func (q *queue) setOrder(floor int, button int, status OrderInfo) {
+	if q.matrix[floor][button].Active == status.Active {
 		return
 	}
+	fmt.Println("SetOrder: ", status)
 	q.matrix[floor][button] = status
 	hw.SetButtonLamp(button, floor, true)
 
 	newOrder <- true
 }
 
-func AddLocalOrder(floor int, button int, id string) {
-	local_queue.setOrder(floor, button, orderInfo{true, id, nil})
+func AddLocalOrder(floor int, button int) {
+	local_queue.setOrder(floor, button, OrderInfo{true, " ", nil})
 }
 
-func AddSafetyOrder(floor int, button int, info orderInfo) {
-	if isExternalOrder(button) {
-		if safety_queue.matrix[floor][button].active == info.active {
-			return
-		} else {
-			safety_queue.setOrder(floor, button, info)
-			go safety_queue.startTimer(floor, button)
-
-		}
-	}
-	return
+func AddSafetyOrder(floor int, button int, info OrderInfo) {
+	safety_queue.setOrder(floor, button, info)
+	go safety_queue.startTimer(floor, button)
 }
 
-func (q *queue) startTimer(floor, button int) { //, Message chan<- config.Message ?? input
-	q.matrix[floor][button].timer = time.NewTimer(time.Second * 30)
-	<-q.matrix[floor][button].timer.C
+func (q *queue) startTimer(floor, button int) { 
+	q.matrix[floor][button].Timer = time.NewTimer(time.Second * 30)
+	<-q.matrix[floor][button].Timer.C
 
-	message <- config.Message{OrderComplete: false, Floor: floor}
+	message <- config.Message{OrderComplete: false, Floor: floor, Button: button}
 }
 
 func (q *queue) stopTimer(floor, button int) {
-	if q.matrix[floor][button].timer != nil {
-		q.matrix[floor][button].timer.Stop()
+	if q.matrix[floor][button].Timer != nil {
+		q.matrix[floor][button].Timer.Stop()
 	}
 }
 
-func RemoveOrder(floor int) { //Message chan<- config.Message
+func RemoveOrder(floor int) { 
 	for button := 0; button < config.N_BUTTONS; button++ {
-		local_queue.matrix[floor][button].active = false
-		safety_queue.matrix[floor][button].active = false
+		local_queue.matrix[floor][button].Active = false
+		safety_queue.matrix[floor][button].Active = false
 		hw.SetButtonLamp(button, floor, false)
 	}
-	message <- config.Message{OrderComplete: true, Floor: floor}
+	message <- config.Message{OrderComplete: true, Floor: floor, Button: 0}
 }
 
-func RemoveSafetyOrder(floor int, info orderInfo) {
+func RemoveSafetyOrder(floor int) {
 	for button := 0; button < config.N_BUTTONS; button++ {
-		safety_queue.matrix[floor][button].active = false
+		safety_queue.matrix[floor][button].Active = false
 		safety_queue.stopTimer(floor, button)
 	}
 }
@@ -103,9 +96,8 @@ func isExternalOrder(button int) bool {
 func (q *queue) IsQueueEmpty() bool {
 	for floor := 0; floor < config.N_FLOORS; floor++ {
 		for button := 0; button < config.N_BUTTONS; button++ {
-			if q.matrix[floor][button].active {
+			if q.matrix[floor][button].Active {
 				return false
-				fmt.Println("The queue is not empty, get your ass moving, someone is waiting!")
 			}
 		}
 	}
@@ -120,7 +112,7 @@ func IsQueueEmpty() bool {
 func (q *queue) isOrderAbove(currentFloor int) bool {
 	for floor := currentFloor + 1; floor < config.N_FLOORS; floor++ {
 		for button := 0; button < config.N_BUTTONS; button++ {
-			if q.matrix[floor][button].active {
+			if q.matrix[floor][button].Active {
 				return true
 			}
 		}
@@ -135,7 +127,7 @@ func IsOrderAbove(currentFloor int) bool {
 func (q *queue) isOrderBelow(currentFloor int) bool {
 	for floor := 0; floor < currentFloor; floor++ {
 		for button := 0; button < config.N_BUTTONS; button++ {
-			if q.matrix[floor][button].active {
+			if q.matrix[floor][button].Active {
 				return true
 			}
 		}
@@ -150,11 +142,11 @@ func IsOrderBelow(currentFloor int) bool {
 func (q *queue) shouldStop(dir int, floor int) bool {
 	switch dir {
 	case config.DIR_UP:
-		return q.matrix[floor][config.BUTTON_UP].active || q.matrix[floor][config.BUTTON_INTERNAL].active || floor == config.N_FLOORS-1 || !q.isOrderAbove(floor)
+		return q.matrix[floor][config.BUTTON_UP].Active || q.matrix[floor][config.BUTTON_INTERNAL].Active || floor == config.N_FLOORS-1 || !q.isOrderAbove(floor)
 	case config.DIR_DOWN:
-		return q.matrix[floor][config.BUTTON_DOWN].active || q.matrix[floor][config.BUTTON_INTERNAL].active || floor == 0 || !q.isOrderBelow(floor)
+		return q.matrix[floor][config.BUTTON_DOWN].Active || q.matrix[floor][config.BUTTON_INTERNAL].Active || floor == 0 || !q.isOrderBelow(floor)
 	case config.DIR_STOP:
-		return q.matrix[floor][config.BUTTON_DOWN].active || q.matrix[floor][config.BUTTON_INTERNAL].active || q.matrix[floor][config.BUTTON_UP].active
+		return q.matrix[floor][config.BUTTON_DOWN].Active || q.matrix[floor][config.BUTTON_INTERNAL].Active || q.matrix[floor][config.BUTTON_UP].Active
 	}
 	return false
 }

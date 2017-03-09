@@ -21,17 +21,15 @@ var floor int
 var dir int
 var state int
 
-func Init(ch Channels) {
+func Init() {
 
 	state = config.Idle
 	dir = config.DIR_STOP
 	floor = 0
 
-	ch.DoorTimeout = make(chan bool)
-	ch.DoorTimerReset = make(chan bool)
+	/*ch.DoorTimeout = make(chan bool)
+	ch.DoorTimerReset = make(chan bool)*/
 
-	go eventManager(ch)
-	go OpenDoor(ch.DoorTimeout, ch.DoorTimerReset)
 
 }
 
@@ -39,7 +37,7 @@ func GetFloorDirState() (int, int, int) {
 	return floor, dir, state
 }
 
-func eventManager(ch Channels) {
+func EventManager(ch Channels) {
 	for {
 		select {
 		case <-ch.NewOrder:
@@ -126,45 +124,38 @@ func OpenDoor(doorTimeout chan<- bool, resetTimer <-chan bool) {
 
 }
 
-func PollFloors() <-chan int {
-	arrivedFloor := make(chan int)
+func PollFloors(temp chan int) {
 	oldFloor := hw.GetFloorSensorSignal()
-	go func() {
-		for {
-			newFloor := hw.GetFloorSensorSignal()
-			if newFloor != oldFloor && newFloor != -1 {
-				hw.SetFloorIndicator(newFloor)
-				arrivedFloor <- newFloor
+	for {
+		newFloor := hw.GetFloorSensorSignal()
+		if newFloor != oldFloor && newFloor != -1 {
+			hw.SetFloorIndicator(newFloor)
+			temp <- newFloor
 			}
-
-			oldFloor = newFloor
-			time.Sleep(time.Millisecond * 100)
+		oldFloor = newFloor
+		time.Sleep(time.Millisecond * 100)
 		}
-	}()
-	return arrivedFloor
 }
 
-func PollButtons() <-chan config.OrderInfo {
-	buttonPress := make(chan config.OrderInfo)
-	go func() {
-
-		for {
-			for floor := 0; floor < config.N_FLOORS; floor++ {
-				for button := 0; button < config.N_BUTTONS; button++ {
-					if (floor == 0 && button == config.BUTTON_DOWN) || (floor == config.N_FLOORS-1 && button == config.BUTTON_UP) {
-						continue
-					}
-
-					if hw.GetButtonSignal(button, floor) {
-
-						buttonPress <- config.OrderInfo{Button: button, Floor: floor}
+func PollButtons(temp chan config.OrderInfo) {
+	var pressed [config.N_FLOORS][config.N_BUTTONS]bool
+	for {
+		for floor := 0; floor < config.N_FLOORS; floor++ {
+			for button := 0; button < config.N_BUTTONS; button++ {
+				if (floor == 0 && button == config.BUTTON_DOWN) || (floor == config.N_FLOORS-1 && button == config.BUTTON_UP) {
+					continue
+				}
+				if hw.GetButtonSignal(button, floor) {
+					if !pressed[floor][button] {
+						pressed[floor][button] = true
+						temp <- config.OrderInfo{Button: button, Floor: floor}
 						hw.SetButtonLamp(button, floor, true)
 					}
-
-				}
+				} else {
+					pressed[floor][button] = false
+				} 
 			}
-			time.Sleep(time.Millisecond * 100)
 		}
-	}()
-	return buttonPress
+		time.Sleep(time.Millisecond * 100)
+	}
 }
