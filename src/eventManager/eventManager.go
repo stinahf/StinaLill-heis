@@ -30,7 +30,6 @@ func Init() {
 	/*ch.DoorTimeout = make(chan bool)
 	ch.DoorTimerReset = make(chan bool)*/
 
-
 }
 
 func GetFloorDirState() (int, int, int) {
@@ -56,10 +55,11 @@ func handleNewOrder(ch Channels) {
 
 	switch state {
 	case config.Idle:
-		dir = queue.ActuallyChooseDirection(floor, dir)
-		if queue.ActuallyShouldStop(dir, floor) {
+		dir = queue.ChooseDirection(floor, dir)
+		if queue.ShouldStop(dir, floor) {
 			ch.DoorTimerReset <- true
 			queue.RemoveOrder(floor)
+			state = config.DoorOpen
 			ch.DoorLamp <- true
 		} else {
 			ch.MotorDir <- dir
@@ -67,7 +67,6 @@ func handleNewOrder(ch Channels) {
 		}
 	case config.Moving:
 		//Ignore
-	case config.DoorClosing:
 	}
 
 }
@@ -78,27 +77,26 @@ func handleReachedFloor(ch Channels, newFloor int) {
 	case config.Idle:
 		//Ignore
 	case config.Moving:
-		if queue.ActuallyShouldStop(dir, floor) {
+		if queue.ShouldStop(dir, floor) {
 			dir = config.DIR_STOP
 			ch.MotorDir <- dir
 			queue.RemoveOrder(floor)
+			state = config.DoorOpen
 			ch.DoorTimerReset <- true
 			ch.DoorLamp <- true
 		}
-	case config.DoorClosing:
-		//Ignore
 	}
 }
 
 func handleDoorClosing(ch Channels) {
 	ch.DoorLamp <- false
 
-	if queue.ActuallyChooseDirection(floor, dir) == config.DIR_STOP {
+	if queue.ChooseDirection(floor, dir) == config.DIR_STOP {
 		dir = config.DIR_STOP
 		ch.MotorDir <- dir
 		state = config.Idle
 	} else {
-		dir = queue.ActuallyChooseDirection(floor, dir)
+		dir = queue.ChooseDirection(floor, dir)
 		ch.MotorDir <- dir
 		state = config.Moving
 	}
@@ -109,7 +107,6 @@ func OpenDoor(doorTimeout chan<- bool, resetTimer <-chan bool) {
 	timer := time.NewTimer(0)
 	timer.Stop()
 	hw.SetDoorOpenLamp(false)
-
 	for {
 		select {
 		case <-resetTimer:
@@ -131,10 +128,10 @@ func PollFloors(temp chan int) {
 		if newFloor != oldFloor && newFloor != -1 {
 			hw.SetFloorIndicator(newFloor)
 			temp <- newFloor
-			}
+		}
 		oldFloor = newFloor
 		time.Sleep(time.Millisecond * 100)
-		}
+	}
 }
 
 func PollButtons(temp chan config.OrderInfo) {
@@ -153,7 +150,7 @@ func PollButtons(temp chan config.OrderInfo) {
 					}
 				} else {
 					pressed[floor][button] = false
-				} 
+				}
 			}
 		}
 		time.Sleep(time.Millisecond * 100)

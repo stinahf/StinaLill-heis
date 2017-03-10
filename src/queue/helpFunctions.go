@@ -31,7 +31,7 @@ func (q *queue) stopTimer(floor, button int) {
 	}
 }
 
-func (q *queue) IsQueueEmpty() bool {
+func (q *queue) isQueueEmpty() bool {
 	for floor := 0; floor < config.N_FLOORS; floor++ {
 		for button := 0; button < config.N_BUTTONS; button++ {
 			if q.matrix[floor][button].Active {
@@ -77,8 +77,8 @@ func (q *queue) shouldStop(dir int, floor int) bool {
 	return false
 }
 
-func (q *queue) ChooseMotorDirection(floor int, dir int) int {
-	if q.IsQueueEmpty() {
+func (q *queue) chooseMotorDirection(floor int, dir int) int {
+	if q.isQueueEmpty() {
 		return config.DIR_STOP
 	}
 	switch dir {

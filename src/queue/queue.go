@@ -68,7 +68,7 @@ func isExternalOrder(button int) bool {
 }
 
 func IsQueueEmpty() bool {
-	return local_queue.IsQueueEmpty()
+	return local_queue.isQueueEmpty()
 }
 
 func IsOrderAbove(currentFloor int) bool {
@@ -79,11 +79,11 @@ func IsOrderBelow(currentFloor int) bool {
 	return local_queue.isOrderBelow(currentFloor)
 }
 
-func ActuallyShouldStop(dir int, floor int) bool {
+func ShouldStop(dir int, floor int) bool {
 	return local_queue.shouldStop(dir, floor)
 }
 
-func ActuallyChooseDirection(floor int, dir int) int {
-	fmt.Println(local_queue.ChooseMotorDirection(floor, dir))
-	return local_queue.ChooseMotorDirection(floor, dir)
+func ChooseDirection(floor int, dir int) int {
+	fmt.Println(local_queue.chooseMotorDirection(floor, dir))
+	return local_queue.chooseMotorDirection(floor, dir)
 }

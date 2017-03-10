@@ -35,7 +35,7 @@ func NetworkHandler(ch ReceiveChannels) {
 		case receiveElevMsg := <-ch.ReceiveInfo:
 			receiveInfoPacket(receiveElevMsg)
 		case receiveExternal := <-ch.ReceiveExternalOrder:
-			liftAssigner.CalculateBestFit(receiveExternal.Floor, receiveExternal.Button)
+			liftAssigner.BestLift(receiveExternal.Floor, receiveExternal.Button)
 		}
 	}
 }
@@ -46,14 +46,8 @@ func receiveExternalOrder(receiveExternal config.OrderInfo) {
 	fmt.Println("Jeg har mottatt og sendt videre at vi har en ekstern orde.")
 }
 
-/*func receiveOrderInfo(receiveMsg config.Message) (int, int) {
-	fmt.Println("Mottatt ordreinfo")
-	return config.MessageInfo = receiveMsg
-}*/
-
 func receiveInfoPacket(receivePacket config.ElevatorMsg) {
 	config.InfoPackage[receivePacket.Id] = config.ElevatorMsg{receivePacket.Id, receivePacket.CurrentFloor, receivePacket.MotorDir, receivePacket.State}
-	//fmt.Println(config.InfoPackage[receivePacket.Id])
 }
 
 func SendInfoPacket() <-chan config.ElevatorMsg {

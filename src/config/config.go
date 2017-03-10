@@ -38,14 +38,15 @@ type Message struct {
 }
 
 const (
-	Idle        = 0
-	Moving      = 1
-	DoorClosing = 2
+	Idle     = 0
+	Moving   = 1
+	DoorOpen = 2
 )
 
 type DistanceInfo struct {
 	Id       string
 	Distance int
+	GotOrder bool
 }
 
 var InfoPackage map[string]ElevatorMsg
