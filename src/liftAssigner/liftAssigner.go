@@ -11,13 +11,16 @@ var fittedLiftId string
 var minDistance int
 var numFittedLifts int
 var numLiftsOnNet int
-var distances [1][1] int //Husk å endre fra harkoding av antall heiser, lag map
+
+func Init() {
+	config.Distances = make(map[string]config.DistanceInfo)
+}
 
 func CalculateBestFit(floor int, button int) {
 	numLiftsOnNet = getNumActiveLifts()
 	numFittedLifts = 0
-	minDistance = 5 
-	distance :=  floor - config.InfoPackage[config.IP].CurrentFloor 
+	minDistance = 5
+	distance := floor - config.InfoPackage[config.IP].CurrentFloor
 	fmt.Println("Jeg gikk inn i CalculateBestFit")
 
 	calculateDistance(floor)
@@ -25,7 +28,7 @@ func CalculateBestFit(floor int, button int) {
 	for id := range config.InfoPackage {
 		switch button {
 		case config.BUTTON_UP:
-			if config.InfoPackage[id].MotorDir == config.DIR_UP && distance > 0  {
+			if config.InfoPackage[id].MotorDir == config.DIR_UP && distance > 0 {
 				queue.AddLocalOrder(floor, button)
 				fmt.Println("La til i heis med retning oppover")
 				numFittedLifts++
@@ -42,36 +45,35 @@ func CalculateBestFit(floor int, button int) {
 	}
 
 	if numFittedLifts < 1 {
-		for lift := 0; lift < numLiftsOnNet; lift ++{
+		for id := range config.Distances {
 
-			if config.InfoPackage[distances[lift][0]].State == config.Idle {
+			if config.InfoPackage[config.Distances[id].Id].State == config.Idle {
 
-				if distances[lift][1] < minDistance{
-					minDistance = distances[lift][i]
+				if config.Distances[id].Distance < minDistance {
+					minDistance = config.Distances[id].Distance
+					fmt.Println(minDistance)
 				}
 			}
 		}
 	}
 
-	//if 	   (queue.IsOrderAbove(config.InfoPackage[id].CurrentFloor) && minDistance == distanceOrderAbove) 
-	//	|| (queue.IsOrderBelow(config.InfoPackage[id].CurrentFloor) && minDistance == distanceOrderBelow) {
-	if 	minDistance == distance {
+	if minDistance == distance {
 		queue.AddLocalOrder(floor, button)
 		fmt.Println("La til i heis i idle og med minste distanse")
-		numFittedLifts ++
+		numFittedLifts++
 		fittedLiftId = config.IP
 		fmt.Println(fittedLiftId)
 
 	}
-	
-	if numFittedLifts < 1{
+
+	if numFittedLifts < 1 {
 		queue.AddLocalOrder(floor, button)
 		fmt.Println("La til i alle fordi ingen passet kravene")
 	}
 
-	for id/*, elevatorInfo*/ := range config.InfoPackage{
+	for id := range config.InfoPackage {
 		info := queue.OrderInfo{false, id, nil}
-		if id != fittedLiftId && fittedLiftId != config.IP{
+		if id != fittedLiftId && fittedLiftId != config.IP {
 			fmt.Println(id)
 			fmt.Println(fittedLiftId)
 			queue.AddSafetyOrder(floor, button, info)
@@ -80,30 +82,32 @@ func CalculateBestFit(floor int, button int) {
 	}
 }
 
-
 func HandleExternalOrderStatus(msgInfo config.Message) {
 	if msgInfo.OrderComplete == true {
 		queue.RemoveSafetyOrder(msgInfo.Floor)
-	}else {
+	} else {
 		queue.AddLocalOrder(msgInfo.Floor, msgInfo.Button)
 	}
 }
-	
+
 func calculateDistance(floor int) {
 	var distance int
 	for id := range config.InfoPackage {
 		distance = floor - config.InfoPackage[id].CurrentFloor
-		if distance < 1{
-			distance = -1*distance
+		if distance < 1 {
+			distance = -1 * distance
 		}
-		distances[id][distance]
+		config.Distances[id] = config.DistanceInfo{id, distance}
 	}
 }
 
-func getNumActiveLifts() int{
+func getNumActiveLifts() int {
 	for id := range config.InfoPackage {
-		numLiftsOnNet++
+		if id != config.InfoPackage[id].Id {
+			numLiftsOnNet++
+		}
 	}
 	return numLiftsOnNet
 }
 
+//FANT BUG! TAR ALDRI HENSYN TIL OM DØRA ER ÅPEN!

@@ -5,22 +5,19 @@ import (
 	"../config"
 	"../eventManager"
 	"../hw"
-	"../queue"
-	//"fmt"
-	//"time"
 	"../liftAssigner"
+	"../queue"
 )
 
 func main() {
 
-
 	ch := eventManager.Channels{
-		NewOrder:     make(chan bool),
-		ReachedFloor: make(chan int),
-		MotorDir:     make(chan int),
-		DoorLamp:     make(chan bool),
+		NewOrder:       make(chan bool),
+		ReachedFloor:   make(chan int),
+		MotorDir:       make(chan int),
+		DoorLamp:       make(chan bool),
 		DoorTimerReset: make(chan bool),
-		DoorTimeout: make(chan bool),
+		DoorTimeout:    make(chan bool),
 	}
 
 	channels := Network.ReceiveChannels{
@@ -34,9 +31,9 @@ func main() {
 
 	hw.Init()
 	eventManager.Init()
-	hw.SetMotorDirection(config.DIR_DOWN)
 	queue.Init(ch.NewOrder, Network.Message)
 	Network.Init()
+	liftAssigner.Init()
 
 	sendInfo := Network.SendInfoPacket()
 
@@ -55,8 +52,6 @@ func main() {
 	go eventManager.OpenDoor(ch.DoorTimeout, ch.DoorTimerReset)
 
 	manageEvents(ch, NewExternalOrder, channels)
-
-	//time.Sleep(time.Second * 3600)
 
 }
 

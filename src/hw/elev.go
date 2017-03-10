@@ -44,7 +44,7 @@ func Init() error {
 	//Move to init floor (1st floor)
 	SetMotorDirection(config.DIR_DOWN)
 	floor := GetFloorSensorSignal()
-	for floor == -1 {
+	for floor != 0 {
 		floor = GetFloorSensorSignal()
 	}
 	SetMotorDirection(config.DIR_STOP)

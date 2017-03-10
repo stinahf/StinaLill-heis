@@ -34,7 +34,7 @@ var ExternalOrderInfo OrderInfo
 type Message struct {
 	OrderComplete bool
 	Floor         int
-	Button 		  int
+	Button        int
 }
 
 const (
@@ -43,6 +43,12 @@ const (
 	DoorClosing = 2
 )
 
+type DistanceInfo struct {
+	Id       string
+	Distance int
+}
+
 var InfoPackage map[string]ElevatorMsg
+var Distances map[string]DistanceInfo
 
 var IP string
