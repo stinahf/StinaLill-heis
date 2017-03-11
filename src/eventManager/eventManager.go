@@ -82,8 +82,8 @@ func handleReachedFloor(ch Channels, newFloor int) {
 			ch.MotorDir <- dir
 			queue.RemoveOrder(floor)
 			state = config.DoorOpen
-			ch.DoorTimerReset <- true
 			ch.DoorLamp <- true
+			ch.DoorTimerReset <- true
 		}
 	}
 }
@@ -103,16 +103,12 @@ func handleDoorClosing(ch Channels) {
 }
 
 func OpenDoor(doorTimeout chan<- bool, resetTimer <-chan bool) {
-	hw.SetDoorOpenLamp(true)
 	timer := time.NewTimer(0)
 	timer.Stop()
-	hw.SetDoorOpenLamp(false)
 	for {
 		select {
 		case <-resetTimer:
-			hw.SetDoorOpenLamp(true)
 			timer.Reset(3 * time.Second)
-			hw.SetDoorOpenLamp(false)
 		case <-timer.C:
 			timer.Stop()
 			doorTimeout <- true

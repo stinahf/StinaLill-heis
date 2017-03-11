@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,7 +25,7 @@ type ReceiveChannels struct {
 }
 
 func Init() {
-	config.InfoPackage = make(map[string]config.ElevatorMsg)
+	config.InfoPackage = make(map[int]config.ElevatorMsg)
 
 	fmt.Println("Network is initialized")
 }
@@ -52,11 +53,12 @@ func receiveInfoPacket(receivePacket config.ElevatorMsg) {
 
 func SendInfoPacket() <-chan config.ElevatorMsg {
 	sendInfo := make(chan config.ElevatorMsg)
-	config.IP = getIP()
+	ip := getIP()
+	config.IP = splitIP(ip)
 	go func() {
 		for {
 			Floor, Dir, State := eventManager.GetFloorDirState()
-			sendPacket := config.ElevatorMsg{config.IP, Floor, Dir, State}
+			sendPacket := config.ElevatorMsg{Id: config.IP, CurrentFloor: Floor, MotorDir: Dir, State: State}
 			sendInfo <- sendPacket
 			time.Sleep(time.Millisecond * 100)
 		}
@@ -99,6 +101,12 @@ func getIP() string {
 		}
 	}
 	return "" //, errors.New("are you connected to the network?")
+}
+
+func splitIP(IP string) int {
+	ip := strings.Split(IP, ".")[3]
+	id, _ := strconv.ParseInt(ip, 10, 0)
+	return int(id)
 }
 
 // Encodes received values from `chans` into type-tagged JSON, then broadcasts

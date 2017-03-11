@@ -7,6 +7,7 @@ import (
 	"../hw"
 	"../liftAssigner"
 	"../queue"
+	"fmt"
 )
 
 func main() {
@@ -76,6 +77,7 @@ func manageEvents(ch eventManager.Channels, New chan config.OrderInfo, channels 
 		case value := <-ch.DoorLamp:
 			hw.SetDoorOpenLamp(value)
 		case messageInfo := <-channels.ReceiveMessage:
+			fmt.Println("OrderComplete: ", messageInfo)
 			liftAssigner.HandleExternalOrderStatus(messageInfo)
 		}
 	}

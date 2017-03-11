@@ -9,7 +9,7 @@ import (
 
 type OrderInfo struct {
 	Active  bool
-	Elev_id string      `json:"-"`
+	Elev_id int         `json:"-"`
 	Timer   *time.Timer `json:"-"`
 }
 
@@ -36,7 +36,8 @@ func Init(newOrderTemp chan bool, messageTemp chan config.Message) {
 }
 
 func AddLocalOrder(floor int, button int) {
-	local_queue.setOrder(floor, button, OrderInfo{true, " ", nil})
+	local_queue.setOrder(floor, button, OrderInfo{true, 0, nil})
+	newOrder <- true
 }
 
 func AddSafetyOrder(floor int, button int, info OrderInfo) {
@@ -47,16 +48,16 @@ func AddSafetyOrder(floor int, button int, info OrderInfo) {
 func RemoveOrder(floor int) {
 	for button := 0; button < config.N_BUTTONS; button++ {
 		local_queue.matrix[floor][button].Active = false
-		safety_queue.matrix[floor][button].Active = false
 		hw.SetButtonLamp(button, floor, false)
+		message <- config.Message{OrderComplete: true, Floor: floor, Button: button}
 	}
-	message <- config.Message{OrderComplete: true, Floor: floor, Button: 0}
 }
 
 func RemoveSafetyOrder(floor int) {
 	for button := 0; button < config.N_BUTTONS; button++ {
 		safety_queue.matrix[floor][button].Active = false
 		safety_queue.stopTimer(floor, button)
+		hw.SetButtonLamp(button, floor, false)
 	}
 }
 

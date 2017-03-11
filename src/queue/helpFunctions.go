@@ -2,7 +2,7 @@ package queue
 
 import (
 	"../config"
-	"../hw"
+	//"../hw"
 	"fmt"
 	"time"
 )
@@ -11,15 +11,11 @@ func (q *queue) setOrder(floor int, button int, status OrderInfo) {
 	if q.matrix[floor][button].Active == status.Active {
 		return
 	}
-	fmt.Println("SetOrder: ", status)
 	q.matrix[floor][button] = status
-	hw.SetButtonLamp(button, floor, true)
-
-	newOrder <- true
 }
 
 func (q *queue) startTimer(floor, button int) {
-	q.matrix[floor][button].Timer = time.NewTimer(time.Second * 30)
+	q.matrix[floor][button].Timer = time.NewTimer(time.Second * 30000)
 	<-q.matrix[floor][button].Timer.C
 
 	message <- config.Message{OrderComplete: false, Floor: floor, Button: button}

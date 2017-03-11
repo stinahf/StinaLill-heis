@@ -18,7 +18,7 @@ const (
 )
 
 type ElevatorMsg struct {
-	Id           string
+	Id           int
 	CurrentFloor int
 	MotorDir     int
 	State        int
@@ -44,12 +44,17 @@ const (
 )
 
 type DistanceInfo struct {
-	Id       string
+	Id       int
 	Distance int
+}
+
+type GotOrderInfo struct {
+	Id       int
 	GotOrder bool
 }
 
-var InfoPackage map[string]ElevatorMsg
-var Distances map[string]DistanceInfo
+var InfoPackage map[int]ElevatorMsg
+var Distances map[int]DistanceInfo
+var GotOrder map[int]GotOrderInfo
 
-var IP string
+var IP int
