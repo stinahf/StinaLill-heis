@@ -4,7 +4,6 @@ import (
 	"../config"
 	"../hw"
 	"../queue"
-	"fmt"
 	"time"
 )
 
@@ -22,14 +21,9 @@ var dir int
 var state int
 
 func Init() {
-
 	state = config.Idle
 	dir = config.DIR_STOP
 	floor = 0
-
-	/*ch.DoorTimeout = make(chan bool)
-	ch.DoorTimerReset = make(chan bool)*/
-
 }
 
 func GetFloorDirState() (int, int, int) {
@@ -50,16 +44,13 @@ func EventManager(ch Channels) {
 }
 
 func handleNewOrder(ch Channels) {
-
-	fmt.Println("Jeg skal utføre en ordre!")
-
 	switch state {
 	case config.Idle:
 		dir = queue.ChooseDirection(floor, dir)
 		if queue.ShouldStop(dir, floor) {
 			ch.DoorTimerReset <- true
-			queue.RemoveOrder(floor)
 			state = config.DoorOpen
+			queue.RemoveOrder(floor)
 			ch.DoorLamp <- true
 		} else {
 			ch.MotorDir <- dir
@@ -80,8 +71,8 @@ func handleReachedFloor(ch Channels, newFloor int) {
 		if queue.ShouldStop(dir, floor) {
 			dir = config.DIR_STOP
 			ch.MotorDir <- dir
-			queue.RemoveOrder(floor)
 			state = config.DoorOpen
+			queue.RemoveOrder(floor)
 			ch.DoorLamp <- true
 			ch.DoorTimerReset <- true
 		}

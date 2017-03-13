@@ -4,7 +4,6 @@ import (
 	"../config"
 	"errors"
 	"fmt"
-	"log"
 )
 
 //const MOTOR_SPEED 2800 //TODO - Move to config file
@@ -69,19 +68,15 @@ func SetMotorDirection(dirn int) {
 
 func SetButtonLamp(button int, floor int, value bool) {
 	if floor < 0 || floor >= config.N_FLOORS {
-		log.Printf("Error: The floor is out of range", floor)
 		return
 	}
 	if button == config.BUTTON_UP && floor == config.N_FLOORS-1 {
-		log.Println("You are already at the top")
 		return
 	}
 	if button == config.BUTTON_DOWN && floor == 0 {
-		log.Println("You are already at the bottom")
 		return
 	}
 	if button != config.BUTTON_UP && button != config.BUTTON_DOWN && button != config.BUTTON_INTERNAL {
-		log.Printf("Invalid button %d\n", button)
 		return
 	}
 
@@ -94,7 +89,6 @@ func SetButtonLamp(button int, floor int, value bool) {
 
 func SetFloorIndicator(floor int) {
 	if floor < 0 || floor >= config.N_FLOORS {
-		log.Printf("The floor %d is out of range! \n", floor)
 		return
 	}
 
@@ -130,19 +124,15 @@ func SetStopLamp(value bool) {
 
 func GetButtonSignal(button int, floor int) bool {
 	if floor < 0 || floor >= config.N_FLOORS {
-		log.Printf("The floor %d is out of range \n", floor)
 		return false
 	}
 	if button < 0 || button >= config.N_BUTTONS {
-		log.Printf("Button %d is out of range \n", floor)
 		return false
 	}
 	if button == config.BUTTON_UP && floor == config.N_FLOORS-1 {
-		log.Println("You are already on the top")
 		return false
 	}
 	if button == config.BUTTON_DOWN && floor == 0 {
-		log.Println("You are already at the bottom")
 		return false
 	}
 	if ioReadBit(button_channel_matrix[floor][button]) {

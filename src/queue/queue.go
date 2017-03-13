@@ -9,7 +9,6 @@ import (
 
 type OrderInfo struct {
 	Active  bool
-	Elev_id int         `json:"-"`
 	Timer   *time.Timer `json:"-"`
 }
 
@@ -36,7 +35,7 @@ func Init(newOrderTemp chan bool, messageTemp chan config.Message) {
 }
 
 func AddLocalOrder(floor int, button int) {
-	local_queue.setOrder(floor, button, OrderInfo{true, 0, nil})
+	local_queue.setOrder(floor, button, OrderInfo{true, nil})
 	newOrder <- true
 }
 
@@ -47,37 +46,22 @@ func AddSafetyOrder(floor int, button int, info OrderInfo) {
 
 func RemoveOrder(floor int) {
 	for button := 0; button < config.N_BUTTONS; button++ {
-		local_queue.matrix[floor][button].Active = false
 		hw.SetButtonLamp(button, floor, false)
+		local_queue.matrix[floor][button].Active = false
 		message <- config.Message{OrderComplete: true, Floor: floor, Button: button}
 	}
 }
 
 func RemoveSafetyOrder(floor int) {
-	for button := 0; button < config.N_BUTTONS; button++ {
-		safety_queue.matrix[floor][button].Active = false
-		safety_queue.stopTimer(floor, button)
+	for button := 0; button < config.BUTTON_INTERNAL; button++ {
 		hw.SetButtonLamp(button, floor, false)
+		safety_queue.stopTimer(floor, button)
+		safety_queue.matrix[floor][button].Active = false
 	}
-}
-
-func isExternalOrder(button int) bool {
-	if button == config.BUTTON_INTERNAL {
-		return false
-	}
-	return true
 }
 
 func IsQueueEmpty() bool {
 	return local_queue.isQueueEmpty()
-}
-
-func IsOrderAbove(currentFloor int) bool {
-	return local_queue.isOrderAbove(currentFloor)
-}
-
-func IsOrderBelow(currentFloor int) bool {
-	return local_queue.isOrderBelow(currentFloor)
 }
 
 func ShouldStop(dir int, floor int) bool {
@@ -85,6 +69,14 @@ func ShouldStop(dir int, floor int) bool {
 }
 
 func ChooseDirection(floor int, dir int) int {
-	fmt.Println(local_queue.chooseMotorDirection(floor, dir))
 	return local_queue.chooseMotorDirection(floor, dir)
+}
+
+func ShouldAddOrder(floor int, button int) bool {
+	for button := 0; button < config.BUTTON_INTERNAL; button++ {
+	if safety_queue.matrix[floor][button].Active {
+		return false
+	}
+}
+	return true
 }

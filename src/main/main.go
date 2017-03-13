@@ -1,13 +1,12 @@
 package main
 
 import (
-	"../Network"
+	"../network"
 	"../config"
 	"../eventManager"
 	"../hw"
 	"../liftAssigner"
 	"../queue"
-	"fmt"
 )
 
 func main() {
@@ -21,33 +20,33 @@ func main() {
 		DoorTimeout:    make(chan bool),
 	}
 
-	channels := Network.ReceiveChannels{
+	channels := network.ReceiveChannels{
 		ReceiveMessage:       make(chan config.Message),
 		ReceiveInfo:          make(chan config.ElevatorMsg),
 		ReceiveExternalOrder: make(chan config.OrderInfo),
 	}
 
-	Network.Message = make(chan config.Message)
+	network.Message = make(chan config.Message)
 	NewExternalOrder := make(chan config.OrderInfo)
 
 	hw.Init()
 	eventManager.Init()
-	queue.Init(ch.NewOrder, Network.Message)
-	Network.Init()
+	queue.Init(ch.NewOrder, network.Message)
+	network.Init()
 	liftAssigner.Init()
 
-	sendInfo := Network.SendInfoPacket()
+	sendInfo := network.SendInfoPacket()
 
-	go Network.Transmitter(16569, Network.Message)
-	go Network.Receiver(16569, channels.ReceiveMessage)
+	go network.Transmitter(16569, network.Message)
+	go network.Receiver(16569, channels.ReceiveMessage)
 
-	go Network.Transmitter(16571, NewExternalOrder)
-	go Network.Receiver(16571, channels.ReceiveExternalOrder)
+	go network.Transmitter(16571, NewExternalOrder)
+	go network.Receiver(16571, channels.ReceiveExternalOrder)
 
-	go Network.Transmitter(16570, sendInfo)
-	go Network.Receiver(16570, channels.ReceiveInfo)
+	go network.Transmitter(16570, sendInfo)
+	go network.Receiver(16570, channels.ReceiveInfo)
 
-	go Network.NetworkHandler(channels)
+	go network.NetworkHandler(channels)
 
 	go eventManager.EventManager(ch)
 	go eventManager.OpenDoor(ch.DoorTimeout, ch.DoorTimerReset)
@@ -56,7 +55,7 @@ func main() {
 
 }
 
-func manageEvents(ch eventManager.Channels, New chan config.OrderInfo, channels Network.ReceiveChannels) {
+func manageEvents(ch eventManager.Channels, New chan config.OrderInfo, channels network.ReceiveChannels) {
 	buttonPress := make(chan config.OrderInfo)
 	go eventManager.PollButtons(buttonPress)
 	floorHIT := make(chan int)
@@ -77,7 +76,6 @@ func manageEvents(ch eventManager.Channels, New chan config.OrderInfo, channels 
 		case value := <-ch.DoorLamp:
 			hw.SetDoorOpenLamp(value)
 		case messageInfo := <-channels.ReceiveMessage:
-			fmt.Println("OrderComplete: ", messageInfo)
 			liftAssigner.HandleExternalOrderStatus(messageInfo)
 		}
 	}

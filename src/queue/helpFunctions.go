@@ -2,8 +2,6 @@ package queue
 
 import (
 	"../config"
-	//"../hw"
-	"fmt"
 	"time"
 )
 
@@ -15,9 +13,9 @@ func (q *queue) setOrder(floor int, button int, status OrderInfo) {
 }
 
 func (q *queue) startTimer(floor, button int) {
-	q.matrix[floor][button].Timer = time.NewTimer(time.Second * 30000)
+	q.matrix[floor][button].Timer = time.NewTimer(time.Second * 20)
+	
 	<-q.matrix[floor][button].Timer.C
-
 	message <- config.Message{OrderComplete: false, Floor: floor, Button: button}
 }
 
@@ -35,7 +33,6 @@ func (q *queue) isQueueEmpty() bool {
 			}
 		}
 	}
-	fmt.Println("The queue is empty - sleepy time! :D")
 	return true
 }
 
