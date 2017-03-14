@@ -17,8 +17,6 @@ type queue struct {
 }
 
 var newOrder chan bool
-var newLocalOrder chan bool
-var OrderTimeout chan OrderInfo
 var message chan config.Message
 
 var local_queue queue
@@ -27,12 +25,21 @@ var safety_queue queue
 func Init(newOrderTemp chan bool, messageTemp chan config.Message) {
 	message = messageTemp
 	newOrder = newOrderTemp
-	newLocalOrder = make(chan bool)
-	OrderTimeout = make(chan OrderInfo)
 
 	fmt.Println("Queue initialized")
+	loadFromHardware(local_queue)
+	filterInternalQueue(local_queue)
 
 }
+
+func filterInternalQueue(q queue) {
+	for floor:=0; floor<config.N_FLOORS; floor++ {
+		for button:= 0; button<config.BUTTON_INTERNAL; button++ {
+			q.matrix[floor][button].Active = false
+		}
+	}
+}
+
 
 func AddLocalOrder(floor int, button int) {
 	local_queue.setOrder(floor, button, OrderInfo{true, nil})

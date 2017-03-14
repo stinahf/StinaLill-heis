@@ -1,7 +1,7 @@
 package hw
 
 /*
-#cgo LDFLAGS: -lcomedi -lm
+#cgo LDFLAGS: -lm -lcomedi
 #include "io.h"
 */
 import "C"

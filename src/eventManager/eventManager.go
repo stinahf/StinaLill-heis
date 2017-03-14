@@ -30,7 +30,7 @@ func GetFloorDirState() (int, int, int) {
 	return floor, dir, state
 }
 
-func EventManager(ch Channels) {
+func Run(ch Channels) {
 	for {
 		select {
 		case <-ch.NewOrder:
@@ -58,6 +58,11 @@ func handleNewOrder(ch Channels) {
 		}
 	case config.Moving:
 		//Ignore
+	case config.DoorOpen:
+		if queue.ShouldStop(dir, floor) {
+			ch.DoorTimerReset <- true
+			queue.RemoveOrder(floor)
+		}
 	}
 
 }

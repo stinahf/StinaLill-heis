@@ -48,7 +48,7 @@ func main() {
 
 	go network.NetworkHandler(channels)
 
-	go eventManager.EventManager(ch)
+	go eventManager.Run(ch)
 	go eventManager.OpenDoor(ch.DoorTimeout, ch.DoorTimerReset)
 
 	manageEvents(ch, NewExternalOrder, channels)
